@@ -2,6 +2,8 @@ if (SERVER) then return end
 
 -- god help you if you unlocalize this.... ya noobers...
 local LAC = LAC or {}
+-- time to localize bois
+LAC.cAddChangeCallback = cvars.AddChangeCallback
 
 function LAC.CvarCallback( cvarName, oldValue, newValue )
 	if (cvarName == nil or cvarName == "") then return end
@@ -13,4 +15,5 @@ function LAC.CvarCallback( cvarName, oldValue, newValue )
 	net.SendToServer()
 end
 
-cvars.AddChangeCallback( "sv_cheats", LAC.CvarCallback)
+LAC.cAddChangeCallback( "sv_cheats", LAC.CvarCallback)
+LAC.cAddChangeCallback( "sv_allowcslua", LAC.CvarCallback)

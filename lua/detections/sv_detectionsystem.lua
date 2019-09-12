@@ -1,15 +1,17 @@
 LAC = LAC or {}
 
--- This system @ the start will be inflexible and probably wont be updated to use 40 different admin mods. 
--- ULX is where it'll start, most likely.
+-- We will be adding many more network strings in the future, as well as dynamic ones.
 util.AddNetworkString( "LACData" )
 util.AddNetworkString( "LACDataC" )
 util.AddNetworkString( "LACHeart" )
 util.AddNetworkString( "LACMisc" ) 
 
--- cvar system initial.
+--[[
+	Load detection sub-modules.
+		TODO: Make it dynamic rather than statically generated.
+]]--
 include("detections/modules/sv_cvars.lua")
 
 
 
-LAC.LogEvent("Detection System Loaded.", LAC.GetDate("%d-%m-%Y-log"), LAC.MainLogFile)
+LAC.LogMainFile("Detection System Loaded.")
