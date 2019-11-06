@@ -9,10 +9,10 @@ LAC.ServerLogDirectory = "lac/"
 LAC.ServerPlayerDetections = "players"
 
 -- Lua errors from the server
-LAC.ServerErrors = "errors"
+LAC.ServerErrorsDirectoryName = "errors"
 
 -- Lua errors from the client. client errors -> clierrors
-LAC.ClientErrors = "clierrors"
+LAC.ClientErrorDirectoryName = "clierrors"
 
 -- Server's main directory.
 LAC.MainLogFile = "logs"
@@ -31,11 +31,11 @@ function LAC.GetDate(form)
 end
 
 function LAC.LogServerError(eventString)
-	LAC.LogEvent(eventString, LAC.GetDate("%d-%m-%Y-log"), LAC.ServerErrors)
+	LAC.LogEvent(eventString, LAC.GetDate("%d-%m-%Y-log"), LAC.ServerErrorsDirectoryName)
 end
 
 function LAC.LogClientError(eventString, id)
-	LAC.LogEvent(eventString, id, LAC.ClientErrors)
+	LAC.LogEvent(eventString, id, LAC.ClientErrorDirectoryName)
 end
 
 function LAC.LogClientDetections(eventString, id)
@@ -53,13 +53,13 @@ function LAC.LogEvent(eventString, fileName, fileDir)
 	end
 	
 	if (fileName == nil or fileName == "") then
-		LAC.LogServerError("No filename passed!")
+		LAC.LogServerError("No filename passed for event: " ..  eventString)
 		fileName = "LogFile" -- Default file name
 	end
 	
 	if (fileDir == nil or fileDir == "") then
-		LAC.LogServerError("No directory name passed!")
-		fileDir = LAC.ServerErrors -- default directory, if something is in here, something went wrong.
+		LAC.LogServerError("No directory name passed for event: " ..  eventString)
+		fileDir = LAC.ServerErrorsDirectoryName -- default directory, if something is in here, something went wrong.
 	end
 	
 	local fullDirName = (LAC.ServerLogDirectory .. fileDir)

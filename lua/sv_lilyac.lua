@@ -1,6 +1,6 @@
 --[[
 	Hello! This is LAC, or Lily Anti Cheat
-	created by Lily @ /id/veryflower or STEAM_0:1:8115
+	created by Lily/Mitch @ /id/veryflower or STEAM_0:1:8115
 	This is a beta-version, which is currently non-working.
 	
 	There is no planned GUI for the anti-cheat because:
@@ -37,6 +37,7 @@ LAC.Detect = "A9B90B05C64DF362333F4F44C8D5D8CA00F823B3"
 			Options
 			Logging
 			Detection
+				Cvar Detection (Change callback + ask clients for their values via challenges)
 --]]
 
 -- Options for the AC

@@ -1,5 +1,3 @@
-if (SERVER) then return end
-
 -- god help you if you unlocalize this.... ya noobers...
 local LAC = LAC or {}
 -- time to localize bois
