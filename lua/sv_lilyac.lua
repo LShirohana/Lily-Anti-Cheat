@@ -37,6 +37,7 @@ LAC.Detect = "A9B90B05C64DF362333F4F44C8D5D8CA00F823B3"
 			Options
 			Logging
 			Detection
+				Server-side MISC detections (CUserCmd, angles, Bhop, ETC)
 				Cvar Detection (Change callback + ask clients for their values via challenges)
 --]]
 

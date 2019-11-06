@@ -15,3 +15,8 @@ end
 
 LAC.cAddChangeCallback( "sv_cheats", LAC.CvarCallback)
 LAC.cAddChangeCallback( "sv_allowcslua", LAC.CvarCallback)
+LAC.cAddChangeCallback( "mat_wireframe", LAC.CvarCallback)
+LAC.cAddChangeCallback( "mat_fullbright", LAC.CvarCallback)
+
+
+
