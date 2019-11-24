@@ -11,7 +11,7 @@ function LAC.ReceiveDataCvar(len, ply)
 		local plyID = player:SteamID()
 		
 		if (cvarName == nil or cvarData == nil) then 
-			LAC.LogClientError("LAC has detected a malformed cvar message! From:" .. plyName, plyID)
+			LAC.LogClientError("LAC has detected a malformed cvar message! From:" .. plyName, player)
 			return
 		end
 		
@@ -24,7 +24,7 @@ function LAC.ReceiveDataCvar(len, ply)
 		]]
 
 		if (serverValue != cvarData) then
-			LAC.LogClientDetections("LAC has detected an incorrect Cvar! PlayerName: " .. plyName, plyID)
+			LAC.LogClientDetections("LAC has detected an incorrect Cvar! PlayerName: " .. plyName, player)
 			return
 		end
 		
@@ -67,4 +67,4 @@ function LAC.ChooseRandomPlayerForCvarChallenge()
 end
 timer.Create("LAC_CvarRandomChallenge", 5, 0, LAC.ChooseRandomPlayerForCvarChallenge)
 
-LAC.LogMainFile("Cvar Detection Loaded.")
+--LAC.LogMainFile("Cvar Detection Loaded.")

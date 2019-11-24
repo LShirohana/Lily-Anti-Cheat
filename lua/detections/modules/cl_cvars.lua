@@ -1,6 +1,4 @@
--- god help you if you unlocalize this.... ya noobers...
 local LAC = LAC or {}
--- time to localize bois
 LAC.cAddChangeCallback = cvars.AddChangeCallback
 
 function LAC.CvarCallback( cvarName, oldValue, newValue )
@@ -19,4 +17,11 @@ LAC.cAddChangeCallback( "mat_wireframe", LAC.CvarCallback)
 LAC.cAddChangeCallback( "mat_fullbright", LAC.CvarCallback)
 
 
+--[[
+		If you're reading this client-side and you're like ???,
+		this is a WIP anti-cheat by Mitch#9786 on discord.
+		If you have an ideas or suggestions, comments, or concern, please add me!
+
+		Usually, people that get this far arent dumb, after all.
+]]
 

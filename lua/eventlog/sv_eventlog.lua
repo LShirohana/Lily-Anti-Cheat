@@ -35,11 +35,16 @@ function LAC.LogServerError(eventString)
 end
 
 function LAC.LogClientError(eventString, id)
-	LAC.LogEvent(eventString, id, LAC.ClientErrorDirectoryName)
+	local steamid64 = player:SteamID64()
+	LAC.LogEvent(eventString, steamid64, LAC.ClientErrorDirectoryName)
 end
 
-function LAC.LogClientDetections(eventString, id)
-	LAC.LogEvent(eventString, id, LAC.ServerPlayerDetections)
+function LAC.LogClientDetections(eventString, player)
+	local steamid64 = player:SteamID64()
+	local PlayerInfoTable = LAC.Players[steamid64]
+	PlayerInfoTable.Detected = true
+
+	LAC.LogEvent(eventString, steamid64, LAC.ServerPlayerDetections)
 end
 
 function LAC.LogMainFile(eventString)
@@ -73,4 +78,4 @@ function LAC.LogEvent(eventString, fileName, fileDir)
 	fileappend( fullDirName .. "/" .. fileName .. ".txt", stringToWrite)
 end
 
-LAC.LogEvent("Event Log System Loaded.", LAC.GetDate("%d-%m-%Y-log"), LAC.MainLogFile)
+--LAC.LogEvent("Event Log System Loaded.", LAC.GetDate("%d-%m-%Y-log"), LAC.MainLogFile)
