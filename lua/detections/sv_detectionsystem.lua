@@ -84,7 +84,7 @@ hook.Add("PlayerDisconnected", "LAC_DISCONNECT", LAC.PlayerDisconnect)
 hook.Add("StartCommand", "LAC_STARTCOMMAND", LAC.StartCommand)
 
 function LAC.CheckContextMenu(player, CUserCmd)
-	if (gmod.GetGamemode().GAMEMODE_NAME != "terrortown") then return end -- Context menu is allowed in other gamemodes, not TTT
+	if (gmod.GetGamemode().Name != "Trouble in Terrorist Town") then return end -- Context menu is allowed in other gamemodes, not TTT
 
 	local plyName = player:Name()
 	
