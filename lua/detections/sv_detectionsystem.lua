@@ -1,5 +1,5 @@
 LAC = LAC or {}
-require("lacUtil")
+require("lacutil") -- gmsv_lacutil_win32.dll or gmsv_lacutil_linux.dll
 
 -- We will be adding many more network strings in the future, as well as dynamic ones.
 util.AddNetworkString( "LACData" )
@@ -58,6 +58,9 @@ function LAC.StartCommand(player, CUserCmd)
 
 	if (playerIdentifier == nil) then return end -- this is nil if you're in a singleplayer game btw.
 	local PlayerInfoTable = LAC.Players[playerIdentifier];
+	if (PlayerInfoTable == nil) then 
+		LAC.Players[playerIdentifier] = {};
+	end
 	PlayerInfoTable.GameName = player:Name()
 	PlayerInfoTable.SteamID = player:SteamID64()
 	PlayerInfoTable.CurrentCmdViewAngles = CUserCmd:GetViewAngles()
