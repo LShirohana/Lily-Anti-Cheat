@@ -67,7 +67,9 @@ function LAC.StartCommand(player, CUserCmd)
 	PlayerInfoTable.CommandNum = CUserCmd:CommandNumber()
 
 	LAC.CheckContextMenu(player, CUserCmd);
-	LAC.CheckMovement(player, CUserCmd);
+	if (player:Alive() && player:Health() > 0) then
+		LAC.CheckMovement(player, CUserCmd);
+	end
 
 	--[[
 		Havent done anything with this function yet
@@ -95,7 +97,7 @@ function LAC.CheckContextMenu(player, CUserCmd)
 	local ContextMenuIsOpen = IsInContextMenu(CUserCmd)
 
 	if (ContextMenuIsOpen) then
-		LAC.LogClientDetections("LAC has detected a player using context menu! PlayerName: " .. plyName, player)
+		LAC.LogClientDetections("LAC has detected a player using context menu! PlayerName: " .. plyName .. " SteamID: " .. player:SteamID(), player)
 	end
 
 	--local x = GetContextViewAngles(cmd)
@@ -110,6 +112,18 @@ end
 local maxSideMove = GetConVar("cl_sidespeed"):GetInt()
 local maxForwardMove = GetConVar("cl_forwardspeed"):GetInt()
 
+local possibleFValues = {}
+possibleFValues[maxForwardMove * 0.25] = true
+possibleFValues[maxForwardMove * 0.5] = true
+possibleFValues[maxForwardMove * 0.75] = true
+possibleFValues[maxForwardMove] = true
+	
+local possibleSValues = {}
+possibleSValues[maxSideMove * 0.25] = true
+possibleSValues[maxSideMove * 0.5] = true
+possibleSValues[maxSideMove * 0.75] = true
+possibleSValues[maxSideMove] = true
+
 function LAC.CheckMovement(player, CUserCmd)
 	local up = math.abs( CUserCmd:GetUpMove() )
 	local side = math.abs( CUserCmd:GetSideMove() )
@@ -123,23 +137,23 @@ function LAC.CheckMovement(player, CUserCmd)
 	if (PlayerInfoTable.Detected) then return end -- player has been detected, Id rather not spam our detection logs.
 
 	if (forward > maxForwardMove) then
-		LAC.LogClientDetections("LAC has detected a player with g improper movement! fMove= " .. forward .. " PlayerName: " .. PlayerInfoTable.GameName, player)
+		LAC.LogClientDetections("LAC has detected a player with g improper movement! fMove= " .. forward .. " PlayerName: " .. PlayerInfoTable.GameName .. " SteamID: " .. player:SteamID(), player)
 	end
 
 	if (side > maxSideMove) then
-		LAC.LogClientDetections("LAC has detected a player with g improper movement! sMove= " .. side .. " PlayerName: " .. PlayerInfoTable.GameName, player)
+		LAC.LogClientDetections("LAC has detected a player with g improper movement! sMove= " .. side .. " PlayerName: " .. PlayerInfoTable.GameName .. " SteamID: " .. player:SteamID(), player)
 	end
 
 	if (up != 0) then
-		LAC.LogClientDetections("LAC has detected a player with improper movement! uMove= " .. up .. " PlayerName: " .. PlayerInfoTable.GameName, player)
+		LAC.LogClientDetections("LAC has detected a player with improper movement! uMove= " .. up .. " PlayerName: " .. PlayerInfoTable.GameName .. " SteamID: " .. player:SteamID(), player)
 	end
 
-	if (forward != 0 && forward != maxForwardMove && forward != (maxForwardMove * 0.5)) then
-		LAC.LogClientDetections("LAC has detected a player with improper movement! fMove= " .. forward .. " PlayerName: " .. PlayerInfoTable.GameName, player)
+	if (forward != 0 && possibleFValues[forward] == nil) then
+		LAC.LogClientDetections("LAC has detected a player with improper movement! fMove= " .. forward .. " PlayerName: " .. PlayerInfoTable.GameName .. " SteamID: " .. player:SteamID(), player)
 	end
 
-	if (side != 0 && side != maxSideMove && side != (maxSideMove * 0.5)) then
-		LAC.LogClientDetections("LAC has detected a player with improper movement! sMove= " .. side .. " PlayerName: " .. PlayerInfoTable.GameName, player)
+	if (side != 0 && possibleSValues[side] == nil) then
+		LAC.LogClientDetections("LAC has detected a player with improper movement! sMove= " .. side .. " PlayerName: " .. PlayerInfoTable.GameName .. " SteamID: " .. player:SteamID(), player)
 	end
 
 	--[[
