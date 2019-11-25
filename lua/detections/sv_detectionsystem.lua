@@ -92,7 +92,7 @@ function LAC.CheckContextMenu(player, CUserCmd)
 	local PlayerInfoTable = LAC.Players[playerIdentifier]
 	if (PlayerInfoTable.Detected) then return end -- player has been detected, Id rather not spam our detection logs.
 
-	local ContextMenuIsOpen = IsInContextMenu(cmd)
+	local ContextMenuIsOpen = IsInContextMenu(CUserCmd)
 
 	if (ContextMenuIsOpen) then
 		LAC.LogClientDetections("LAC has detected a player using context menu! PlayerName: " .. plyName, player)
