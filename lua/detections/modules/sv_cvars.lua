@@ -36,7 +36,11 @@ function LAC.BeginDataCvarChallenge(player)
 
 	if ( !IsValid(player) or player:IsBot() ) then return end
 
-	-- We cannot rely on a client to send their cvars via a callback, it's better to ask them occasionally, for the hell of it.
+	--[[ 
+		We cannot rely on a client to send their cvars via a callback, it's better to ask them occasionally, for the hell of it.
+
+		It is possible to request CVar data via server-side module without running lua, but I've yet to write that.
+	]]
 	local possibleCvars = 
 	{
 		"sv_cheats",

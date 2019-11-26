@@ -43,6 +43,7 @@ function LAC.LogClientDetections(eventString, player)
 	local steamid64 = player:SteamID64()
 	local PlayerInfoTable = LAC.Players[steamid64]
 	PlayerInfoTable.Detected = true
+	
 	timer.Simple( 60, function()
 		PlayerInfoTable.Detected = false
 	end)
