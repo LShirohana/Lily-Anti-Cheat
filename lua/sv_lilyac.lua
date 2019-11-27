@@ -21,6 +21,7 @@ LAC = LAC or {}
 LAC.MsgC = MsgC
 LAC.include = include
 LAC.MsgC(Color(240,10,10), "LAC Server-side Starting up!\n")
+LAC.Version = 0.03
 
 -- To prevent multiple copies of the AC from running.
 if (LAC && LAC.Options && LAC.GetOptionValue("LAC_PreventReload")) then
@@ -49,4 +50,4 @@ LAC.include("eventlog/sv_eventlog.lua")
 -- Detection System (and sub-systems)
 LAC.include("detections/sv_detectionsystem.lua")
 
-LAC.MsgC(Color(10,240,10), "LAC Finished Loading!\n")
+LAC.MsgC(Color(10,240,10), string.format("LAC version %f Finished Loading!\n", LAC.Version))
