@@ -50,4 +50,4 @@ LAC.include("eventlog/sv_eventlog.lua")
 -- Detection System (and sub-systems)
 LAC.include("detections/sv_detectionsystem.lua")
 
-LAC.MsgC(Color(10,240,10), string.format("LAC version %f Finished Loading!\n", LAC.Version))
+LAC.MsgC(Color(10,240,10), string.format("LAC Version %f Finished Loading!\n", LAC.Version))
