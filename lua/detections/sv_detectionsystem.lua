@@ -54,41 +54,6 @@ function LAC.PlayerDisconnect(player)
 	LAC.Players[id64] = nil;
 end
 
-function LAC.StartCommand(player, CUserCmd)
-	if (!IsValid(player)) then return end
-	if (player:IsBot()) then return end -- fk off bot >:(
-
-	local pTable = LAC.GetPTable(player);
-	if (pTable == nil) then 
-		LAC.Players[player:SteamID64()] = {}; -- Just incase the AC runs after someone has already joined.
-	end
-
-	pTable.Name = player:Name()
-	pTable.SteamID32 = player:SteamID()
-	pTable.SteamID64 = player:SteamID64()
-
-	if (pTable.Detected) then return end
-
-	LAC.CheckContextMenu(player, CUserCmd);
-	if (player:Alive() && player:Health() > 0) then
-		LAC.CheckMovement(player, CUserCmd);
-		LAC.CheckEyeAngles(player, CUserCmd); -- idk, being safe.
-	end
-
-	--[[
-		Havent done anything with this function yet
-			TODO: 
-			Aimbot check
-			triggerbot check
-			bhop check
-			spamming check
-	]]
-end
-
-hook.Add("PlayerInitialSpawn", "LAC_SPAWN", LAC.PlayerSpawn)
-hook.Add("PlayerDisconnected", "LAC_DISCONNECT", LAC.PlayerDisconnect)
-hook.Add("StartCommand", "LAC_STARTCOMMAND", LAC.StartCommand)
-
 function LAC.CheckContextMenu(player, CUserCmd)
 	if (gmod.GetGamemode().Name != "Trouble in Terrorist Town") then return end -- Context menu is allowed in other gamemodes, not TTT
 
@@ -349,6 +314,41 @@ function LAC.DebugCheaterBan(player, text, teamchat)
 		end
 	end
 end
+
+function LAC.StartCommand(player, CUserCmd)
+	if (!IsValid(player)) then return end
+	if (player:IsBot()) then return end -- fk off bot >:(
+
+	local pTable = LAC.GetPTable(player);
+	if (pTable == nil) then 
+		LAC.Players[player:SteamID64()] = {}; -- Just incase the AC runs after someone has already joined.
+	end
+
+	pTable.Name = player:Name()
+	pTable.SteamID32 = player:SteamID()
+	pTable.SteamID64 = player:SteamID64()
+
+	if (pTable.Detected) then return end
+
+	LAC.CheckContextMenu(player, CUserCmd);
+	if (player:Alive() && player:Health() > 0) then
+		LAC.CheckMovement(player, CUserCmd)
+		LAC.CheckEyeAngles(player, CUserCmd); -- idk, being safe.
+	end
+
+	--[[
+		Havent done anything with this function yet
+			TODO: 
+			Aimbot check
+			triggerbot check
+			bhop check
+			spamming check
+	]]
+end
+
+hook.Add("PlayerInitialSpawn", "LAC_SPAWN", LAC.PlayerSpawn)
+hook.Add("PlayerDisconnected", "LAC_DISCONNECT", LAC.PlayerDisconnect)
+hook.Add("StartCommand", "LAC_STARTCOMMAND", LAC.StartCommand)
 hook.Add("PlayerSay", "LAC_DEBUGBAN", LAC.DebugCheaterBan)
 
 --[[
