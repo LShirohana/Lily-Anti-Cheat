@@ -129,7 +129,7 @@ end
 	This is an attempt at catching aimbotters via massive angle jumps.
 	idk lol
 	This is currently not called since Ive yet to implement it properly. Just some code references that I had help using leystryku.
-]]
+
 
 function LAC.CheckAimAngles(ply, CUserCmd)
 	local pTable = LAC.GetPTable(ply)
@@ -189,6 +189,7 @@ function LAC.CheckAimAngles(ply, CUserCmd)
 	end
 
 end
+]]
 
 --[[
 	Credit mostly to leystryku for his ideas and 
