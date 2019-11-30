@@ -8,6 +8,7 @@ util.AddNetworkString( "LACData" )
 util.AddNetworkString( "LACDataC" )
 util.AddNetworkString( "LACHeart" )
 util.AddNetworkString( "LACMisc" ) 
+util.AddNetworkString( "LACSpec" ) 
 
 --[[ 
 	All server-side detections will probably remain in this file for ease of reading,
@@ -57,20 +58,21 @@ function LAC.StartCommand(player, CUserCmd)
 	if (!IsValid(player)) then return end
 	if (player:IsBot()) then return end -- fk off bot >:(
 
-	local PlayerInfoTable = LAC.GetPTable(player);
-	if (PlayerInfoTable == nil) then 
-		LAC.Players[id64] = {}; -- Just incase the AC runs after someone has already joined.
+	local pTable = LAC.GetPTable(player);
+	if (pTable == nil) then 
+		LAC.Players[player:SteamID64()] = {}; -- Just incase the AC runs after someone has already joined.
 	end
 
-	PlayerInfoTable.Name = player:Name()
-	PlayerInfoTable.SteamID32 = player:SteamID()
-	PlayerInfoTable.SteamID64 = player:SteamID64()
-	--PlayerInfoTable.CurrentCmdViewAngles = CUserCmd:GetViewAngles()
-	--PlayerInfoTable.CommandNum = CUserCmd:CommandNumber()
+	pTable.Name = player:Name()
+	pTable.SteamID32 = player:SteamID()
+	pTable.SteamID64 = player:SteamID64()
+
+	if (pTable.Detected) then return end
 
 	LAC.CheckContextMenu(player, CUserCmd);
 	if (player:Alive() && player:Health() > 0) then
 		LAC.CheckMovement(player, CUserCmd);
+		LAC.CheckEyeAngles(player, CUserCmd); -- idk, being safe.
 	end
 
 	--[[
@@ -91,17 +93,102 @@ function LAC.CheckContextMenu(player, CUserCmd)
 	if (gmod.GetGamemode().Name != "Trouble in Terrorist Town") then return end -- Context menu is allowed in other gamemodes, not TTT
 
 	local pTable = LAC.GetPTable(player)
-	if (pTable.Detected) then return end -- player has been detected, Id rather not spam our detection logs.
-
 	local ContextMenuIsOpen = IsInContextMenu(CUserCmd)
 
-	if (ContextMenuIsOpen) then
+	if (ContextMenuIsOpen) then -- F
 		local DetectionString = string.format("LAC has detected a player using context menu! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
 		LAC.LogClientDetections(DetectionString, player)
 	end
 
 end
 
+--[[
+	Directly ripped from CInput::ClampAngles.
+	Afterall, if they dont even clamp their angles, they're probably really bad cheaters, frankly.
+]]
+local maxPitchUp = GetConVar("cl_pitchup"):GetInt()
+local maxPitchDown = GetConVar("cl_pitchdown"):GetInt()
+
+function LAC.CheckEyeAngles(ply, CUserCmd)
+	local pTable = LAC.GetPTable(ply)
+	local viewangles = CUserCmd:GetViewAngles();
+
+	if (viewangles.pitch > maxPitchUp) then
+		local DetectionString = string.format("LAC has detected a player with a pitch of %f PlayerName: %s SteamID: %s", viewangles.pitch, pTable.Name, pTable.SteamID32);
+		LAC.LogClientDetections(DetectionString, ply)
+	end
+
+	if (viewangles.pitch < (-maxPitchDown)) then
+		local DetectionString = string.format("LAC has detected a player with a pitch of %f PlayerName: %s SteamID: %s", viewangles.pitch, pTable.Name, pTable.SteamID32);
+		LAC.LogClientDetections(DetectionString, ply)
+	end
+
+end
+
+--[[
+	This is an attempt at catching aimbotters via massive angle jumps.
+	idk lol
+	This is currently not called since Ive yet to implement it properly. Just some code references that I had help using leystryku.
+]]
+
+function LAC.CheckAimAngles(ply, CUserCmd)
+	local pTable = LAC.GetPTable(ply)
+	local viewangles = CUserCmd:GetViewAngles();
+	local acos = math.acos
+	local deg = math.deg
+	local abs = math.abs
+
+
+	if (pTable.AimingTable == nil) then 
+		pTable.AimingTable = {}
+	end
+
+	local aimingRecord = 
+	{
+		buttons = CUserCmd:GetButtons(),
+		angles = CUserCmd:GetViewAngles(),
+		--AimingAtSomeone = IsValid(ply:GetEyeTrace().Entity),
+	}
+	
+	table.insert(pTable.AimingTable, aimingRecord)
+	local aimRecordSize = #pTable.AimingTable
+	--print("records currently: " ..aimRecordSize)
+
+	local LastRecord = nil
+	local degreeAverage = 0;
+	local degreeTotal = 0;
+
+	for i = 1, aimRecordSize do
+		if (i == 1) then 
+			LastRecord = pTable.AimingTable[i];
+			continue;
+		end
+		
+		local CurAngle = pTable.AimingTable[i].angles:Forward()
+		local PrevAngle = LastRecord.angles:Forward()
+
+		if (abs(abs(CurAngle.x) - abs(PrevAngle.x)) < 1) then 
+			local dot = CurAngle:Dot(PrevAngle)
+			local degreeDiff = deg(acos(dot))
+			--print(degreeDiff)
+			degreeTotal = degreeTotal + degreeDiff
+		end
+	end
+
+	degreeAverage = degreeTotal / aimRecordSize
+	if (degreeAverage > 1) then
+		print(degreeAverage)
+	end
+
+	if (aimRecordSize > 35) then
+		local delete = (aimRecordSize - 34)
+
+		for i = 1, delete do
+			table.remove(pTable.AimingTable, 1)
+		end
+	end
+
+end
 
 --[[
 	Credit mostly to leystryku for his ideas and 
@@ -116,6 +203,7 @@ end
 ]]
 local maxSideMove = GetConVar("cl_sidespeed"):GetInt() -- Internally these are floats, but if you're setting your cl_forwardmove to 450.4 you're kinda dumb
 local maxForwardMove = GetConVar("cl_forwardspeed"):GetInt()
+local maxUpMove = GetConVar("cl_upspeed"):GetInt()
 
 local possibleFValues = {}
 possibleFValues[maxForwardMove * 0.25] = true
@@ -129,43 +217,95 @@ possibleSValues[maxSideMove * 0.5] = true
 possibleSValues[maxSideMove * 0.75] = true
 possibleSValues[maxSideMove] = true
 
+local possibleUValues = {}
+possibleUValues[maxUpMove * 0.25] = true
+possibleUValues[maxUpMove * 0.5] = true
+possibleUValues[maxUpMove * 0.75] = true
+possibleUValues[maxUpMove] = true
+
 function LAC.CheckMovement(player, CUserCmd)
-	local up = math.abs( CUserCmd:GetUpMove() )
-	local side = math.abs( CUserCmd:GetSideMove() )
-	local forward = math.abs( CUserCmd:GetForwardMove() )
-
-	if (up + side + forward == 0) then return end -- Not moving.
-
+	-- Original values
+	local upmove = CUserCmd:GetUpMove()
+	local sidemove = CUserCmd:GetSideMove()
+	local forwardmove = CUserCmd:GetForwardMove()
+	-- Absolute values
+	local upmoveAbs = math.abs( upmove )
+	local sidemoveAbs = math.abs( sidemove)
+	local forwardmoveAbs = math.abs( forwardmove )
+	-- yey buttons
+	local buttons = CUserCmd:GetButtons();
+	-- playerinfo table
 	local pTable = LAC.GetPTable(player)
-	if (pTable.Detected) then return end
 
-	if (forward > maxForwardMove) then
-		local DetectionString = string.format("LAC has detected a player with >improper movement! fMove= %f PlayerName: %s SteamID: %s", forward, pTable.Name, pTable.SteamID32);
+	-- Not moving.
+	if (upmoveAbs + sidemoveAbs + forwardmoveAbs == 0) then return end 
+
+	-- If fmove is greater than max fmove
+	if (forwardmoveAbs > maxForwardMove) then
+		local DetectionString = string.format("LAC has detected a player with >improper movement! fMove= %f PlayerName: %s SteamID: %s", forwardmove, pTable.Name, pTable.SteamID32);
 		LAC.LogClientDetections(DetectionString, player)
 	end
 
-	if (side > maxSideMove) then
-		local DetectionString = string.format("LAC has detected a player with >improper movement! sMove= %f PlayerName: %s SteamID: %s", side, pTable.Name, pTable.SteamID32);
+	-- If smove is greater than max smove
+	if (sidemoveAbs > maxSideMove) then
+		local DetectionString = string.format("LAC has detected a player with >improper movement! sMove= %f PlayerName: %s SteamID: %s", sidemove, pTable.Name, pTable.SteamID32);
 		LAC.LogClientDetections(DetectionString, player)
 	end
 
-	if (up != 0) then
-		local DetectionString = string.format("LAC has detected a player with >improper movement! uMove= %f PlayerName: %s SteamID: %s", up, pTable.Name, pTable.SteamID32);
+	-- If upmove is greater than ... well, 0. It shouldnt be above 0.
+	-- update: apparently you can actually trigger this by doing +moveup jesus christ
+	if (upmoveAbs > maxUpMove) then
+		local DetectionString = string.format("LAC has detected a player with >improper movement! uMove= %f PlayerName: %s SteamID: %s", upmove, pTable.Name, pTable.SteamID32);
 		LAC.LogClientDetections(DetectionString, player)
 	end
 
 	if (player.UsesController != nil) then return end
 
-	if (forward != 0 && possibleFValues[forward] == nil) then
-		local DetectionString = string.format("LAC has detected a player with improper movement! fMove= %f PlayerName: %s SteamID: %s", forward, pTable.Name, pTable.SteamID32);
-		LAC.LogClientDetections(DetectionString, player)
+	if (forwardmove != 0) then
+
+		if (possibleFValues[forwardmoveAbs] == nil) then
+			local DetectionString = string.format("LAC has detected a player with improper movement! fMove= %f PlayerName: %s SteamID: %s", forwardmove, pTable.Name, pTable.SteamID32);
+			LAC.LogClientDetections(DetectionString, player)
+		end
+
+		if (forwardmove > 0 && !LAC.IsButtonDown(buttons, IN_FORWARD)) then 
+			local DetectionString = string.format("LAC has detected a player with improper movement! No fbutton PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
+			LAC.LogClientDetections(DetectionString, player)
+		end
+
+		if (forwardmove < 0 && !LAC.IsButtonDown(buttons, IN_BACK)) then 
+			local DetectionString = string.format("LAC has detected a player with improper movement! No bbutton PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
+			LAC.LogClientDetections(DetectionString, player)
+		end
+
 	end
 
-	if (side != 0 && possibleSValues[side] == nil) then
-		local DetectionString = string.format("LAC has detected a player with improper movement! sMove= %f PlayerName: %s SteamID: %s", side, pTable.Name, pTable.SteamID32);
-		LAC.LogClientDetections(DetectionString, player)
+	if (sidemove != 0) then
+
+		if (possibleSValues[sidemoveAbs] == nil) then
+			local DetectionString = string.format("LAC has detected a player with improper movement! sMove= %f PlayerName: %s SteamID: %s", sidemove, pTable.Name, pTable.SteamID32);
+			LAC.LogClientDetections(DetectionString, player)
+		end
+
+		if (sidemove > 0 && !LAC.IsButtonDown(buttons, IN_MOVERIGHT)) then
+			local DetectionString = string.format("LAC has detected a player with improper movement! No rbutton PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
+			LAC.LogClientDetections(DetectionString, player)
+		end
+
+		if (sidemove < 0 && !LAC.IsButtonDown(buttons, IN_MOVELEFT)) then
+			local DetectionString = string.format("LAC has detected a player with improper movement! No lbutton PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
+			LAC.LogClientDetections(DetectionString, player)
+		end
+
 	end
 
+end
+
+--[[
+	helper function for checking button states
+]]
+function LAC.IsButtonDown(buttons, IN_BUTTON)
+	return (bit.band(buttons, IN_BUTTON) != 0);
 end
 
 --[[
@@ -190,10 +330,32 @@ end
 hook.Add("PlayerButtonDown", "LAC_PLAYERBUTTONDOWN", LAC.CheckKeyPresses)
 
 --[[
+	This is a debug ban im implementing while im on the server. TL;DR this will ban someone for cheating when I call it. 
+	For security purposes, I will log my own bans in case you feel otherwise on the ban
+
+	The purpose of this is because I will be on the server live, looking for detections so i can read the data and figure out why it happened.
+	Im attempting to snuff out false bans.
+]]
+
+function LAC.DebugCheaterBan(player, text, teamchat)
+	if (!IsValid(player)) then return end
+	if (player:IsBot()) then return end
+	
+	if (string.sub( text, 1, 3) == "!db" ) then
+		if (player:SteamID() == "STEAM_0:1:8115") then
+			local steamid = string.sub( text, 5)
+			RunConsoleCommand("ulx", "sbanid", steamid, 0, "Lily Anti-Cheat")
+		end
+	end
+end
+hook.Add("PlayerSay", "LAC_DEBUGBAN", LAC.DebugCheaterBan)
+
+--[[
 	Load detection sub-modules that get sent to the client/interact with them.
 		TODO: Make it dynamic rather than statically generated.
 ]]--
 
 include("detections/modules/sv_cvars.lua")
+include("detections/modules/sv_spec.lua")
  -- last thing in the file, or, should be lol.
 --LAC.LogMainFile("Detection System Loaded.")

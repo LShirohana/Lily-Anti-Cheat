@@ -16,7 +16,6 @@ LAC.cAddChangeCallback( "sv_allowcslua", LAC.CvarCallback)
 LAC.cAddChangeCallback( "mat_wireframe", LAC.CvarCallback)
 LAC.cAddChangeCallback( "mat_fullbright", LAC.CvarCallback)
 
-
 --[[
 		If you're reading this client-side and you're like ???,
 		this is a WIP anti-cheat by Mitch#9786 on discord.
@@ -25,3 +24,9 @@ LAC.cAddChangeCallback( "mat_fullbright", LAC.CvarCallback)
 		Usually, people that get this far arent dumb, after all.
 ]]
 
+function LAC.ReceiveDebugPrint()
+	local strToPrint = net.ReadString();
+	print(strToPrint)
+	chat.AddText(strToPrint)
+end
+net.Receive("LACMisc", LAC.ReceiveDebugPrint)
