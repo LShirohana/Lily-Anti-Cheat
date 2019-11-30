@@ -311,6 +311,7 @@ function LAC.DebugCheaterBan(player, text, teamchat)
 		if (player:SteamID() == "STEAM_0:1:8115") then
 			local steamid = string.sub( text, 5)
 			RunConsoleCommand("ulx", "sbanid", steamid, 0, "Lily Anti-Cheat")
+			LAC.LogMainFile("Mitch has ran ulx sbanid on " .. steamid .. " .")
 		end
 	end
 end
