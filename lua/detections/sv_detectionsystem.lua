@@ -71,19 +71,18 @@ end
 	Directly ripped from CInput::ClampAngles.
 	Afterall, if they dont even clamp their angles, they're probably really bad cheaters, frankly.
 ]]
-local maxPitchUp = GetConVar("cl_pitchup"):GetInt()
-local maxPitchDown = GetConVar("cl_pitchdown"):GetInt()
+local maxPitch = 89
 
 function LAC.CheckEyeAngles(ply, CUserCmd)
 	local pTable = LAC.GetPTable(ply)
 	local viewangles = CUserCmd:GetViewAngles();
 
-	if (viewangles.pitch > maxPitchUp) then
+	if (viewangles.pitch > maxPitch) then
 		local DetectionString = string.format("LAC has detected a player with a pitch of %f PlayerName: %s SteamID: %s", viewangles.pitch, pTable.Name, pTable.SteamID32);
 		LAC.LogClientDetections(DetectionString, ply)
 	end
 
-	if (viewangles.pitch < (-maxPitchDown)) then
+	if (viewangles.pitch < (-maxPitch)) then
 		local DetectionString = string.format("LAC has detected a player with a pitch of %f PlayerName: %s SteamID: %s", viewangles.pitch, pTable.Name, pTable.SteamID32);
 		LAC.LogClientDetections(DetectionString, ply)
 	end
@@ -279,10 +278,10 @@ Note:
 Joystick starts @ 114 and ends @ 161.
 ]]
 
-function LAC.CheckKeyPresses(player, button)
+function LAC.CheckKeyPresses(ply, button)
 	if (!IsValid(player)) then return end
-	if (player:IsBot()) then return end -- pretty sure bots dont trigger this but whatever
-	if (player.UsesController != nil) then return end
+	if (ply:IsBot()) then return end -- pretty sure bots dont trigger this but whatever
+	if (ply.UsesController != nil) then return end
 	
 	--[[
 	if (button >= 72 && button <= 77) then 
@@ -290,7 +289,7 @@ function LAC.CheckKeyPresses(player, button)
 	end]]
 		
 	if (button >= 114 && button <= 161) then 
-		player.UsesController = true;
+		ply.UsesController = true;
 	end
 end
 hook.Add("PlayerButtonDown", "LAC_PLAYERBUTTONDOWN", LAC.CheckKeyPresses)
@@ -316,26 +315,25 @@ function LAC.DebugCheaterBan(player, text, teamchat)
 	end
 end
 
-function LAC.StartCommand(player, CUserCmd)
-	if (!IsValid(player)) then return end
-	if (player:IsBot()) then return end -- fk off bot >:(
+function LAC.StartCommand(ply, CUserCmd)
+	if (!IsValid(ply)) then return end
+	if (ply:IsBot()) then return end -- fk off bot >:(
+	if (ply:Health() <= 0 or not ply:Alive() or ply:Team() == TEAM_SPECTATOR) then return end
 
-	local pTable = LAC.GetPTable(player);
+	local pTable = LAC.GetPTable(ply);
 	if (pTable == nil) then 
-		LAC.Players[player:SteamID64()] = {}; -- Just incase the AC runs after someone has already joined.
+		LAC.Players[ply:SteamID64()] = {}; -- Just incase the AC runs after someone has already joined.
 	end
 
-	pTable.Name = player:Name()
-	pTable.SteamID32 = player:SteamID()
-	pTable.SteamID64 = player:SteamID64()
+	pTable.Name = ply:Name()
+	pTable.SteamID32 = ply:SteamID()
+	pTable.SteamID64 = ply:SteamID64()
 
 	if (pTable.Detected) then return end
 
-	LAC.CheckContextMenu(player, CUserCmd);
-	if (player:Alive() && player:Health() > 0) then
-		LAC.CheckMovement(player, CUserCmd)
-		LAC.CheckEyeAngles(player, CUserCmd); -- idk, being safe.
-	end
+	LAC.CheckContextMenu(ply, CUserCmd);
+	LAC.CheckMovement(ply, CUserCmd)
+	LAC.CheckEyeAngles(ply, CUserCmd); -- idk, being safe.
 
 	--[[
 		Havent done anything with this function yet

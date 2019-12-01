@@ -27,6 +27,6 @@ LAC.cAddChangeCallback( "mat_fullbright", LAC.CvarCallback)
 function LAC.ReceiveDebugPrint()
 	local strToPrint = net.ReadString();
 	print(strToPrint)
-	chat.AddText(strToPrint)
+	chat.AddText(Color(240,40,40), strToPrint)
 end
 net.Receive("LACMisc", LAC.ReceiveDebugPrint)
