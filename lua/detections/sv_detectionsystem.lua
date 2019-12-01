@@ -22,6 +22,34 @@ function LAC.GetPTable(player)
 	return LAC.Players[player:SteamID64()]
 end
 
+function LAC.PlayerDetection(reason, ply)
+	local steamid64 = ply:SteamID64()
+	local PlayerInfoTable = LAC.Players[steamid64]
+	PlayerInfoTable.DetectCount = PlayerInfoTable.DetectCount or 0
+
+
+	PlayerInfoTable.DetectCount = PlayerInfoTable.DetectCount + 1
+	
+	if (PlayerInfoTable.DetectCount > 6) then
+		PlayerInfoTable.Detected = true
+		PlayerInfoTable.DetectCount = 0
+	end
+	
+	timer.Simple( 60, function()
+		PlayerInfoTable.Detected = false
+	end)
+
+	-- This is for debug, so i can see detections live while in the server.
+	local mitc = player.GetBySteamID("STEAM_0:1:8115")
+	if (IsValid(mitc)) then
+		net.Start("LACMisc")
+		net.WriteString(reason)
+		net.Send(mitc)
+	end
+
+	LAC.LogClientDetections(reason, ply)
+end
+
 function LAC.PlayerSpawn(player)
 	if (!IsValid(player) or player:IsBot()) then return end
 
@@ -62,7 +90,7 @@ function LAC.CheckContextMenu(player, CUserCmd)
 
 	if (ContextMenuIsOpen) then -- F
 		local DetectionString = string.format("LAC has detected a player using context menu! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
-		LAC.LogClientDetections(DetectionString, player)
+		LAC.PlayerDetection(DetectionString, player)
 	end
 
 end
@@ -79,12 +107,12 @@ function LAC.CheckEyeAngles(ply, CUserCmd)
 
 	if (viewangles.pitch > maxPitch) then
 		local DetectionString = string.format("LAC has detected a player with a pitch of %f PlayerName: %s SteamID: %s", viewangles.pitch, pTable.Name, pTable.SteamID32);
-		LAC.LogClientDetections(DetectionString, ply)
+		LAC.PlayerDetection(DetectionString, ply)
 	end
 
 	if (viewangles.pitch < (-maxPitch)) then
 		local DetectionString = string.format("LAC has detected a player with a pitch of %f PlayerName: %s SteamID: %s", viewangles.pitch, pTable.Name, pTable.SteamID32);
-		LAC.LogClientDetections(DetectionString, ply)
+		LAC.PlayerDetection(DetectionString, ply)
 	end
 
 end
@@ -208,20 +236,20 @@ function LAC.CheckMovement(player, CUserCmd)
 	-- If fmove is greater than max fmove
 	if (forwardmoveAbs > maxForwardMove) then
 		local DetectionString = string.format("LAC has detected a player with >improper movement! fMove= %f PlayerName: %s SteamID: %s", forwardmove, pTable.Name, pTable.SteamID32);
-		LAC.LogClientDetections(DetectionString, player)
+		LAC.PlayerDetection(DetectionString, player)
 	end
 
 	-- If smove is greater than max smove
 	if (sidemoveAbs > maxSideMove) then
 		local DetectionString = string.format("LAC has detected a player with >improper movement! sMove= %f PlayerName: %s SteamID: %s", sidemove, pTable.Name, pTable.SteamID32);
-		LAC.LogClientDetections(DetectionString, player)
+		LAC.PlayerDetection(DetectionString, player)
 	end
 
 	-- If upmove is greater than ... well, 0. It shouldnt be above 0.
 	-- update: apparently you can actually trigger this by doing +moveup jesus christ
 	if (upmoveAbs > maxUpMove) then
 		local DetectionString = string.format("LAC has detected a player with >improper movement! uMove= %f PlayerName: %s SteamID: %s", upmove, pTable.Name, pTable.SteamID32);
-		LAC.LogClientDetections(DetectionString, player)
+		LAC.PlayerDetection(DetectionString, player)
 	end
 
 	if (player.UsesController != nil) then return end
@@ -230,7 +258,7 @@ function LAC.CheckMovement(player, CUserCmd)
 
 		if (possibleFValues[forwardmoveAbs] == nil) then
 			local DetectionString = string.format("LAC has detected a player with improper movement! fMove= %f PlayerName: %s SteamID: %s", forwardmove, pTable.Name, pTable.SteamID32);
-			LAC.LogClientDetections(DetectionString, player)
+			LAC.PlayerDetection(DetectionString, player)
 		end
 
 			--[[
@@ -252,7 +280,7 @@ function LAC.CheckMovement(player, CUserCmd)
 
 		if (possibleSValues[sidemoveAbs] == nil) then
 			local DetectionString = string.format("LAC has detected a player with improper movement! sMove= %f PlayerName: %s SteamID: %s", sidemove, pTable.Name, pTable.SteamID32);
-			LAC.LogClientDetections(DetectionString, player)
+			LAC.PlayerDetection(DetectionString, player)
 		end
 
 		--[[
@@ -271,7 +299,7 @@ function LAC.CheckMovement(player, CUserCmd)
 
 	if (LAC.IsButtonDown(buttons, IN_BULLRUSH)) then
 		local DetectionString = string.format("LAC has detected a player with improper movement! IN_BULLRUSH PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
-		LAC.LogClientDetections(DetectionString, player)
+		LAC.PlayerDetection(DetectionString, player)
 	end
 
 end

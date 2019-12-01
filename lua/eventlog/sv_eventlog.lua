@@ -41,27 +41,6 @@ end
 
 function LAC.LogClientDetections(eventString, ply)
 	local steamid64 = ply:SteamID64()
-	local PlayerInfoTable = LAC.Players[steamid64]
-
-	PlayerInfoTable.DetectCount = PlayerInfoTable.DetectCount or 0
-	PlayerInfoTable.DetectCount++
-	
-	if (PlayerInfoTable.DetectCount > 5) then
-		PlayerInfoTable.Detected = true
-	end
-	
-	timer.Simple( 60, function()
-		PlayerInfoTable.Detected = false
-	end)
-
-	-- This is for debug, so i can see detections live while in the server.
-	local mitc = player.GetBySteamID("STEAM_0:1:8115")
-	if (IsValid(mitc)) then
-		net.Start("LACMisc")
-		net.WriteString(eventString)
-		net.Send(mitc)
-	end
-
 	LAC.LogEvent(eventString, steamid64, LAC.ServerPlayerDetections)
 end
 
