@@ -233,6 +233,8 @@ function LAC.CheckMovement(player, CUserCmd)
 			LAC.LogClientDetections(DetectionString, player)
 		end
 
+			--[[
+			// not 100% reliable unfortunately.
 		if (forwardmove > 0 && !LAC.IsButtonDown(buttons, IN_FORWARD)) then 
 			local DetectionString = string.format("LAC has detected a player with improper movement! No fbutton PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
 			LAC.LogClientDetections(DetectionString, player)
@@ -242,6 +244,7 @@ function LAC.CheckMovement(player, CUserCmd)
 			local DetectionString = string.format("LAC has detected a player with improper movement! No bbutton PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
 			LAC.LogClientDetections(DetectionString, player)
 		end
+		]]
 
 	end
 
@@ -252,6 +255,8 @@ function LAC.CheckMovement(player, CUserCmd)
 			LAC.LogClientDetections(DetectionString, player)
 		end
 
+		--[[
+			// not 100% reliable unfortunately.
 		if (sidemove > 0 && !LAC.IsButtonDown(buttons, IN_MOVERIGHT)) then
 			local DetectionString = string.format("LAC has detected a player with improper movement! No rbutton PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
 			LAC.LogClientDetections(DetectionString, player)
@@ -260,8 +265,13 @@ function LAC.CheckMovement(player, CUserCmd)
 		if (sidemove < 0 && !LAC.IsButtonDown(buttons, IN_MOVELEFT)) then
 			local DetectionString = string.format("LAC has detected a player with improper movement! No lbutton PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
 			LAC.LogClientDetections(DetectionString, player)
-		end
+		end]]
 
+	end
+
+	if (LAC.IsButtonDown(buttons, IN_BULLRUSH)) then
+		local DetectionString = string.format("LAC has detected a player with improper movement! IN_BULLRUSH PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
+		LAC.LogClientDetections(DetectionString, player)
 	end
 
 end

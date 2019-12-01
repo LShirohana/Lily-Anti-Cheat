@@ -42,7 +42,13 @@ end
 function LAC.LogClientDetections(eventString, ply)
 	local steamid64 = ply:SteamID64()
 	local PlayerInfoTable = LAC.Players[steamid64]
-	PlayerInfoTable.Detected = true
+
+	PlayerInfoTable.DetectCount = PlayerInfoTable.DetectCount or 0
+	PlayerInfoTable.DetectCount++
+	
+	if (PlayerInfoTable.DetectCount > 5) then
+		PlayerInfoTable.Detected = true
+	end
 	
 	timer.Simple( 60, function()
 		PlayerInfoTable.Detected = false
