@@ -30,7 +30,7 @@ function LAC.PlayerDetection(reason, ply)
 
 	PlayerInfoTable.DetectCount = PlayerInfoTable.DetectCount + 1
 	
-	if (PlayerInfoTable.DetectCount > 6) then
+	if (PlayerInfoTable.DetectCount > 12) then
 		PlayerInfoTable.Detected = true
 		PlayerInfoTable.DetectCount = 0
 	end
@@ -356,6 +356,7 @@ end
 function LAC.StartCommand(ply, CUserCmd)
 	if (!IsValid(ply)) then return end
 	if (ply:IsBot()) then return end -- fk off bot >:(
+	if (CUserCmd:IsForced()) then return end
 	if (ply:Health() <= 0 or not ply:Alive() or ply:Team() == TEAM_SPECTATOR) then return end
 
 	local pTable = LAC.GetPTable(ply);
