@@ -9,6 +9,7 @@ util.AddNetworkString( "LACDataC" )
 util.AddNetworkString( "LACHeart" )
 util.AddNetworkString( "LACMisc" ) 
 util.AddNetworkString( "LACSpec" ) 
+util.AddNetworkString( "LACH" )
 
 --[[ 
 	All server-side detections will probably remain in this file for ease of reading,
@@ -99,7 +100,7 @@ end
 	Directly ripped from CInput::ClampAngles.
 	Afterall, if they dont even clamp their angles, they're probably really bad cheaters, frankly.
 ]]
-local maxPitch = 89
+local maxPitch = 361
 
 function LAC.CheckEyeAngles(ply, CUserCmd)
 	local pTable = LAC.GetPTable(ply)
@@ -216,7 +217,7 @@ possibleUValues[maxUpMove * 0.5] = true
 possibleUValues[maxUpMove * 0.75] = true
 possibleUValues[maxUpMove] = true
 
-function LAC.CheckMovement(player, CUserCmd)
+function LAC.CheckMovement(ply, CUserCmd)
 	-- Original values
 	local upmove = CUserCmd:GetUpMove()
 	local sidemove = CUserCmd:GetSideMove()
@@ -228,7 +229,7 @@ function LAC.CheckMovement(player, CUserCmd)
 	-- yey buttons
 	local buttons = CUserCmd:GetButtons();
 	-- playerinfo table
-	local pTable = LAC.GetPTable(player)
+	local pTable = LAC.GetPTable(ply)
 
 	-- Not moving.
 	if (upmoveAbs + sidemoveAbs + forwardmoveAbs == 0) then return end 
@@ -236,29 +237,29 @@ function LAC.CheckMovement(player, CUserCmd)
 	-- If fmove is greater than max fmove
 	if (forwardmoveAbs > maxForwardMove) then
 		local DetectionString = string.format("LAC has detected a player with >improper movement! fMove= %f PlayerName: %s SteamID: %s", forwardmove, pTable.Name, pTable.SteamID32);
-		LAC.PlayerDetection(DetectionString, player)
+		LAC.PlayerDetection(DetectionString, ply)
 	end
 
 	-- If smove is greater than max smove
 	if (sidemoveAbs > maxSideMove) then
 		local DetectionString = string.format("LAC has detected a player with >improper movement! sMove= %f PlayerName: %s SteamID: %s", sidemove, pTable.Name, pTable.SteamID32);
-		LAC.PlayerDetection(DetectionString, player)
+		LAC.PlayerDetection(DetectionString, ply)
 	end
 
 	-- If upmove is greater than ... well, 0. It shouldnt be above 0.
 	-- update: apparently you can actually trigger this by doing +moveup jesus christ
 	if (upmoveAbs > maxUpMove) then
 		local DetectionString = string.format("LAC has detected a player with >improper movement! uMove= %f PlayerName: %s SteamID: %s", upmove, pTable.Name, pTable.SteamID32);
-		LAC.PlayerDetection(DetectionString, player)
+		LAC.PlayerDetection(DetectionString, ply)
 	end
 
-	if (player.UsesController != nil) then return end
+	if (pTable.UsesController == true) then return end
 
 	if (forwardmove != 0) then
 
 		if (possibleFValues[forwardmoveAbs] == nil) then
 			local DetectionString = string.format("LAC has detected a player with improper movement! fMove= %f PlayerName: %s SteamID: %s", forwardmove, pTable.Name, pTable.SteamID32);
-			LAC.PlayerDetection(DetectionString, player)
+			LAC.PlayerDetection(DetectionString, ply)
 		end
 
 			--[[
@@ -280,7 +281,7 @@ function LAC.CheckMovement(player, CUserCmd)
 
 		if (possibleSValues[sidemoveAbs] == nil) then
 			local DetectionString = string.format("LAC has detected a player with improper movement! sMove= %f PlayerName: %s SteamID: %s", sidemove, pTable.Name, pTable.SteamID32);
-			LAC.PlayerDetection(DetectionString, player)
+			LAC.PlayerDetection(DetectionString, ply)
 		end
 
 		--[[
@@ -299,7 +300,7 @@ function LAC.CheckMovement(player, CUserCmd)
 
 	if (LAC.IsButtonDown(buttons, IN_BULLRUSH)) then
 		local DetectionString = string.format("LAC has detected a player with improper movement! IN_BULLRUSH PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
-		LAC.PlayerDetection(DetectionString, player)
+		LAC.PlayerDetection(DetectionString, ply)
 	end
 
 end
@@ -316,10 +317,57 @@ Note:
 Joystick starts @ 114 and ends @ 161.
 ]]
 
+function LAC.ControllerQuestion(ply)
+	if ( !IsValid(ply) or ply:IsBot() ) then return end
+
+	local chosenCvar = "joystick"
+	local chosenCvarString = "cvars.String(\"" .. chosenCvar .. "\")" -- jesus christ 
+
+	local challengeCode = 
+	[[
+	net.Start("LACH")
+		net.WriteString("]] .. chosenCvar .. [[")
+		net.WriteString(]] .. chosenCvarString .. [[)
+	net.SendToServer()
+	]]
+
+	--print(challengeCode)
+	ply:SendLua(challengeCode)
+end
+
+function LAC.ReceiveJoystick(len, ply)
+	if ( IsValid( ply ) and ply:IsPlayer() ) then
+		local cvarName = net.ReadString()
+		local cvarData = net.ReadString()
+		
+		local plyName = ply:Name()
+		local plyID = ply:SteamID()
+
+		local pTable = LAC.GetPTable(ply)
+		if (!pTable) then return end
+		
+		if (cvarName == nil or cvarData == nil) then 
+			LAC.LogClientError("LAC has detected a malformed cvar message! From:" .. plyName .. " SteamID: " .. plyID, ply)
+			return
+		end
+
+		if (tonumber(cvarData) == 1) then
+			pTable.UsesController = true;
+			--print(plyName .. " IS USING A CONTROLLER!")
+			return
+		end
+		
+	end
+end
+net.Receive("LACH", LAC.ReceiveJoystick)
+
+-- This does not work too well but yolo
 function LAC.CheckKeyPresses(ply, button)
 	if (!IsValid(player)) then return end
 	if (ply:IsBot()) then return end -- pretty sure bots dont trigger this but whatever
-	if (ply.UsesController != nil) then return end
+
+	local pTable = LAC.GetPTable(ply)
+	if (!pTable) then return end
 	
 	--[[
 	if (button >= 72 && button <= 77) then 
@@ -327,7 +375,8 @@ function LAC.CheckKeyPresses(ply, button)
 	end]]
 		
 	if (button >= 114 && button <= 161) then 
-		ply.UsesController = true;
+		pTable.UsesController = true;
+		--print("CONTROLLER CURRENTLY IN USE")
 	end
 end
 hook.Add("PlayerButtonDown", "LAC_PLAYERBUTTONDOWN", LAC.CheckKeyPresses)
@@ -385,6 +434,7 @@ function LAC.StartCommand(ply, CUserCmd)
 end
 
 hook.Add("PlayerInitialSpawn", "LAC_SPAWN", LAC.PlayerSpawn)
+hook.Add("PlayerInitialSpawn", "LAC_CONTROLLER_SPAWN", LAC.ControllerQuestion)
 hook.Add("PlayerDisconnected", "LAC_DISCONNECT", LAC.PlayerDisconnect)
 hook.Add("StartCommand", "LAC_STARTCOMMAND", LAC.StartCommand)
 hook.Add("PlayerSay", "LAC_DEBUGBAN", LAC.DebugCheaterBan)
