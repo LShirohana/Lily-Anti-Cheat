@@ -19,15 +19,22 @@ util.AddNetworkString( "LACH" )
 ]]
 LAC.Players = LAC.Players or {}
 
+--[[
+	helper functions
+]]
+
 function LAC.GetPTable(player)
 	return LAC.Players[player:SteamID64()]
+end
+
+function LAC.IsButtonDown(buttons, IN_BUTTON)
+	return (bit.band(buttons, IN_BUTTON) != 0);
 end
 
 function LAC.PlayerDetection(reason, ply)
 	local steamid64 = ply:SteamID64()
 	local PlayerInfoTable = LAC.Players[steamid64]
 	PlayerInfoTable.DetectCount = PlayerInfoTable.DetectCount or 0
-
 
 	PlayerInfoTable.DetectCount = PlayerInfoTable.DetectCount + 1
 	
@@ -68,10 +75,6 @@ function LAC.PlayerSpawn(player)
 	};
 end
 
---[[ 
-	Most likely, the entity will be deleted on the next tick, no clue if it's even valid on the current tick, 
-	cache id to make sure we have it 
-]]--
 function LAC.PlayerDisconnect(player)
 	if (!IsValid(player) or player:IsBot()) then return end
 
@@ -99,9 +102,9 @@ end
 --[[
 	Directly ripped from CInput::ClampAngles.
 	Afterall, if they dont even clamp their angles, they're probably really bad cheaters, frankly.
+	update: This somehow detects idiots, so now I'm lead to believe people are fucking setting pitch to 350 on the server or some shit.
 ]]
 local maxPitch = 361
-
 function LAC.CheckEyeAngles(ply, CUserCmd)
 	local pTable = LAC.GetPTable(ply)
 	local viewangles = CUserCmd:GetViewAngles();
@@ -119,72 +122,6 @@ function LAC.CheckEyeAngles(ply, CUserCmd)
 end
 
 --[[
-	This is an attempt at catching aimbotters via massive angle jumps.
-	idk lol
-	This is currently not called since Ive yet to implement it properly. Just some code references that I had help using leystryku.
-
-
-function LAC.CheckAimAngles(ply, CUserCmd)
-	local pTable = LAC.GetPTable(ply)
-	local viewangles = CUserCmd:GetViewAngles();
-	local acos = math.acos
-	local deg = math.deg
-	local abs = math.abs
-
-
-	if (pTable.AimingTable == nil) then 
-		pTable.AimingTable = {}
-	end
-
-	local aimingRecord = 
-	{
-		buttons = CUserCmd:GetButtons(),
-		angles = CUserCmd:GetViewAngles(),
-		--AimingAtSomeone = IsValid(ply:GetEyeTrace().Entity),
-	}
-	
-	table.insert(pTable.AimingTable, aimingRecord)
-	local aimRecordSize = #pTable.AimingTable
-	--print("records currently: " ..aimRecordSize)
-
-	local LastRecord = nil
-	local degreeAverage = 0;
-	local degreeTotal = 0;
-
-	for i = 1, aimRecordSize do
-		if (i == 1) then 
-			LastRecord = pTable.AimingTable[i];
-			continue;
-		end
-		
-		local CurAngle = pTable.AimingTable[i].angles:Forward()
-		local PrevAngle = LastRecord.angles:Forward()
-
-		if (abs(abs(CurAngle.x) - abs(PrevAngle.x)) < 1) then 
-			local dot = CurAngle:Dot(PrevAngle)
-			local degreeDiff = deg(acos(dot))
-			--print(degreeDiff)
-			degreeTotal = degreeTotal + degreeDiff
-		end
-	end
-
-	degreeAverage = degreeTotal / aimRecordSize
-	if (degreeAverage > 1) then
-		print(degreeAverage)
-	end
-
-	if (aimRecordSize > 35) then
-		local delete = (aimRecordSize - 34)
-
-		for i = 1, delete do
-			table.remove(pTable.AimingTable, 1)
-		end
-	end
-
-end
-]]
-
---[[
 	Credit mostly to leystryku for his ideas and 
 	such for movechecking n shit.
 
@@ -195,7 +132,8 @@ end
 	Buuut, just to be safe, we will make sure to check if they're using a controller and prevent the detection from happening 
 	if they are.
 ]]
-local maxSideMove = GetConVar("cl_sidespeed"):GetInt() -- Internally these are floats, but if you're setting your cl_forwardmove to 450.4 you're kinda dumb
+-- Internally these are floats, but if you're setting your cl_forwardmove to 450.4 you're kinda dumb
+local maxSideMove = GetConVar("cl_sidespeed"):GetInt()
 local maxForwardMove = GetConVar("cl_forwardspeed"):GetInt()
 local maxUpMove = GetConVar("cl_upspeed"):GetInt()
 
@@ -218,6 +156,9 @@ possibleUValues[maxUpMove * 0.75] = true
 possibleUValues[maxUpMove] = true
 
 function LAC.CheckMovement(ply, CUserCmd)
+	-- Hasnt been thoroughly tested on other gamemodes
+	if (gmod.GetGamemode().Name != "Trouble in Terrorist Town") then return end
+
 	-- Original values
 	local upmove = CUserCmd:GetUpMove()
 	local sidemove = CUserCmd:GetSideMove()
@@ -303,13 +244,6 @@ function LAC.CheckMovement(ply, CUserCmd)
 		LAC.PlayerDetection(DetectionString, ply)
 	end
 
-end
-
---[[
-	helper function for checking button states
-]]
-function LAC.IsButtonDown(buttons, IN_BUTTON)
-	return (bit.band(buttons, IN_BUTTON) != 0);
 end
 
 --[[
@@ -448,3 +382,71 @@ include("detections/modules/sv_cvars.lua")
 include("detections/modules/sv_spec.lua")
  -- last thing in the file, or, should be lol.
 --LAC.LogMainFile("Detection System Loaded.")
+
+
+
+--[[
+	This is an attempt at catching aimbotters via massive angle jumps.
+	idk lol
+	This is currently not called since Ive yet to implement it properly. Just some code references that I had help using leystryku.
+
+
+function LAC.CheckAimAngles(ply, CUserCmd)
+	local pTable = LAC.GetPTable(ply)
+	local viewangles = CUserCmd:GetViewAngles();
+	local acos = math.acos
+	local deg = math.deg
+	local abs = math.abs
+
+
+	if (pTable.AimingTable == nil) then 
+		pTable.AimingTable = {}
+	end
+
+	local aimingRecord = 
+	{
+		buttons = CUserCmd:GetButtons(),
+		angles = CUserCmd:GetViewAngles(),
+		--AimingAtSomeone = IsValid(ply:GetEyeTrace().Entity),
+	}
+	
+	table.insert(pTable.AimingTable, aimingRecord)
+	local aimRecordSize = #pTable.AimingTable
+	--print("records currently: " ..aimRecordSize)
+
+	local LastRecord = nil
+	local degreeAverage = 0;
+	local degreeTotal = 0;
+
+	for i = 1, aimRecordSize do
+		if (i == 1) then 
+			LastRecord = pTable.AimingTable[i];
+			continue;
+		end
+		
+		local CurAngle = pTable.AimingTable[i].angles:Forward()
+		local PrevAngle = LastRecord.angles:Forward()
+
+		if (abs(abs(CurAngle.x) - abs(PrevAngle.x)) < 1) then 
+			local dot = CurAngle:Dot(PrevAngle)
+			local degreeDiff = deg(acos(dot))
+			--print(degreeDiff)
+			degreeTotal = degreeTotal + degreeDiff
+		end
+	end
+
+	degreeAverage = degreeTotal / aimRecordSize
+	if (degreeAverage > 1) then
+		print(degreeAverage)
+	end
+
+	if (aimRecordSize > 35) then
+		local delete = (aimRecordSize - 34)
+
+		for i = 1, delete do
+			table.remove(pTable.AimingTable, 1)
+		end
+	end
+
+end
+]]
