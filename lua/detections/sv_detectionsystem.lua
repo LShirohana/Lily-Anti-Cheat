@@ -23,8 +23,8 @@ LAC.Players = LAC.Players or {}
 	helper functions
 ]]
 
-function LAC.GetPTable(player)
-	return LAC.Players[player:SteamID64()]
+function LAC.GetPTable(ply)
+	return LAC.Players[ply:SteamID64()]
 end
 
 function LAC.IsButtonDown(buttons, IN_BUTTON)
@@ -58,10 +58,10 @@ function LAC.PlayerDetection(reason, ply)
 	LAC.LogClientDetections(reason, ply)
 end
 
-function LAC.PlayerSpawn(player)
-	if (!IsValid(player) or player:IsBot()) then return end
+function LAC.PlayerSpawn(ply)
+	if (!IsValid(ply) or ply:IsBot()) then return end
 
-	local id64 = player:SteamID64()
+	local id64 = ply:SteamID64()
 	if (id64 == "90071996842377216" or id64 == "") then
 		-- 90071996842377216 is the id of a bot.
 		return
@@ -69,16 +69,16 @@ function LAC.PlayerSpawn(player)
 
 	LAC.Players[id64] = 
 	{
-		Name = player:Nick(), 
+		Name = ply:Nick(), 
 		CurrentCmdViewAngles = nil,
 		CommandNum = nil
 	};
 end
 
-function LAC.PlayerDisconnect(player)
-	if (!IsValid(player) or player:IsBot()) then return end
+function LAC.PlayerDisconnect(ply)
+	if (!IsValid(ply) or ply:IsBot()) then return end
 
-	local id64 = player:SteamID64()
+	local id64 = ply:SteamID64()
 	if (id64 == "90071996842377216" or id64 == "") then
 		return
 	end
@@ -86,15 +86,15 @@ function LAC.PlayerDisconnect(player)
 	LAC.Players[id64] = nil;
 end
 
-function LAC.CheckContextMenu(player, CUserCmd)
+function LAC.CheckContextMenu(ply, CUserCmd)
 	if (gmod.GetGamemode().Name != "Trouble in Terrorist Town") then return end -- Context menu is allowed in other gamemodes, not TTT
 
-	local pTable = LAC.GetPTable(player)
+	local pTable = LAC.GetPTable(ply)
 	local ContextMenuIsOpen = IsInContextMenu(CUserCmd)
 
 	if (ContextMenuIsOpen) then -- F
 		local DetectionString = string.format("LAC has detected a player using context menu! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
-		LAC.PlayerDetection(DetectionString, player)
+		LAC.PlayerDetection(DetectionString, ply)
 	end
 
 end
@@ -323,12 +323,12 @@ hook.Add("PlayerButtonDown", "LAC_PLAYERBUTTONDOWN", LAC.CheckKeyPresses)
 	Im attempting to snuff out false bans.
 ]]
 
-function LAC.DebugCheaterBan(player, text, teamchat)
-	if (!IsValid(player)) then return end
-	if (player:IsBot()) then return end
+function LAC.DebugCheaterBan(ply, text, teamchat)
+	if (!IsValid(ply)) then return end
+	if (!ply:IsPlayer()) then return end
 	
 	if (string.sub( text, 1, 3) == "!db" ) then
-		if (player:SteamID() == "STEAM_0:1:8115") then
+		if (ply:SteamID() == "STEAM_0:1:8115") then
 			local steamid = string.sub( text, 5)
 			RunConsoleCommand("ulx", "sbanid", steamid, 0, "Lily Anti-Cheat")
 			LAC.LogMainFile("Mitch has ran ulx sbanid on " .. steamid .. " .")
