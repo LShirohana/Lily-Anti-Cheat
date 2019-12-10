@@ -71,7 +71,7 @@ function LAC.LogEvent(eventString, fileName, fileDir)
 	end
 
 	local date = LAC.GetDate() -- default format is gud
-	local stringToWrite = date  .. "[" .. LAC.Version .. "]" .. eventString .. "\n"
+	local stringToWrite = date  .. "[" .. LAC.Version .. "] " .. eventString .. "\n"
 	fileappend( fullDirName .. "/" .. fileName .. ".txt", stringToWrite)
 end
 
