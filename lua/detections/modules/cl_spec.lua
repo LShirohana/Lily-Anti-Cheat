@@ -14,11 +14,16 @@ net.Receive("LACSpec", function()
 	
 	LocalPlayer().spectate_entity=c;
 	hook.Add("CalcView","css",function(e,f,g,h)
+
+		if (!IsValid(c)) then return end
+
 		local i={}
 		i.origin=c:EyePos()
 		i.angles=c:EyeAngles()
 		i.fov=h;
 		i.drawviewer=true;
+		c:SetNoDraw(true)
+
 		return i 
     end)
     
