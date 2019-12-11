@@ -24,7 +24,7 @@ function LAC.ReceiveDataCvar(len, ply)
 		]]
 
 		if (serverValue != cvarData) then
-			LAC.LogClientDetections("LAC has detected an incorrect Cvar! PlayerName: " .. plyName .. " SteamID: " .. plyID, player)
+			LAC.LogClientDetections("LAC has detected an incorrect Cvar! Cvar= " .. cvarName .. " = " ..  cvarData .. " PlayerName: " .. plyName .. " SteamID: " .. plyID, player)
 			return
 		end
 		
