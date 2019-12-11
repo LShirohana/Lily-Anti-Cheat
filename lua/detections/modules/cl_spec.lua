@@ -7,6 +7,8 @@ net.Receive("LACSpec", function()
 			return 
 		end;
 		hook.Remove("CalcView","css")
+		
+		LocalPlayer().spectate_entity:SetNoDraw(true)
 		LocalPlayer().spectate_entity=nil;
 		chat.AddText("You have stopped spectating ", c)
 		return 
