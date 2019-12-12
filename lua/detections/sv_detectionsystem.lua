@@ -31,30 +31,63 @@ function LAC.IsButtonDown(buttons, IN_BUTTON)
 	return (bit.band(buttons, IN_BUTTON) != 0);
 end
 
-function LAC.PlayerDetection(reason, ply)
-	local steamid64 = ply:SteamID64()
-	local PlayerInfoTable = LAC.Players[steamid64]
-	PlayerInfoTable.DetectCount = PlayerInfoTable.DetectCount or 0
+function LAC.IsTTT()
+	return (gmod.GetGamemode().Name == "Trouble in Terrorist Town")
+end
 
-	PlayerInfoTable.DetectCount = PlayerInfoTable.DetectCount + 1
-	
-	if (PlayerInfoTable.DetectCount > 12) then
-		PlayerInfoTable.Detected = true
-		PlayerInfoTable.DetectCount = 0
-	end
-	
-	timer.Simple( 60, function()
-		PlayerInfoTable.Detected = false
-	end)
-
-	-- This is for debug, so i can see detections live while in the server.
+-- Currently, only informs me, because other admins dont know wtf they're reading.
+function LAC.InformAdmins(reason)
 	local mitc = player.GetBySteamID("STEAM_0:1:8115")
 	if (IsValid(mitc)) then
 		net.Start("LACMisc")
 		net.WriteString(reason)
 		net.Send(mitc)
 	end
+end
 
+function LAC.InitializePlayerTable(ply)
+	LAC.Players[ply:SteamID64()] = 
+	{
+		Name = ply:Nick(), 
+		DetectCount = 0,
+		Detected = false,
+		SteamID32 = ply:SteamID(),
+		SteamID64 = ply:SteamID64(),
+		CurrentCmdViewAngles = nil,
+		DeltaAngleValues = {},
+		DDeltaAngleValues = {},
+		CommandNum = nil,
+		PerfectJump = 0,
+		OnGround = false,
+		InJump = false,
+	};
+end
+
+-- Things that are suspicious, but definitely not bannable, such as someone pressing insert lol.
+function LAC.PlayerSuspiciousDetection(reason, ply)
+	LAC.InformAdmins(reason)
+	LAC.LogClientDetections(reason, ply)
+end
+
+function LAC.PlayerDetection(reason, ply)
+	local pTable = LAC.GetPTable(ply)
+	pTable.DetectCount = pTable.DetectCount + 1
+	
+	if (pTable.DetectCount > 12) then
+		pTable.Detected = true
+		pTable.DetectCount = 0
+	end
+	
+	timer.Simple( 60, function()
+		pTable.Detected = false
+		pTable.DetectCount = pTable.DetectCount - 1
+	end)
+
+	-- This is for debug, so i can see detections live while in the server,
+	-- helps me figure out what caused a false detection, if it does happen.
+	LAC.InformAdmins(reason)
+
+	-- Logging to server that a detection has occurred.
 	LAC.LogClientDetections(reason, ply)
 end
 
@@ -67,12 +100,7 @@ function LAC.PlayerSpawn(ply)
 		return
 	end
 
-	LAC.Players[id64] = 
-	{
-		Name = ply:Nick(), 
-		CurrentCmdViewAngles = nil,
-		CommandNum = nil
-	};
+	LAC.InitializePlayerTable(ply)
 end
 
 function LAC.PlayerDisconnect(ply)
@@ -86,9 +114,182 @@ function LAC.PlayerDisconnect(ply)
 	LAC.Players[id64] = nil;
 end
 
-function LAC.CheckContextMenu(ply, CUserCmd)
-	if (gmod.GetGamemode().Name != "Trouble in Terrorist Town") then return end -- Context menu is allowed in other gamemodes, not TTT
+--[[
+	Following 2 detections is from CAC almost C&P
+	Edited/tinkered with as I think is neccesary, because ya
+]]
 
+local math_deg = math.deg
+local math_acos = math.acos
+local math_min = math.min
+local math_abs = math.abs
+local SysTime = SysTime
+local table_insert = table.insert
+local math_sqrt = math.sqrt
+
+local function getMean( t )
+	local sum = 0
+	local count= 0
+
+	for k, v in ipairs(t) do
+		sum = sum + v
+		count = count + 1
+	end
+
+	return (sum / count)
+end
+
+local function stDev( t )
+	local m
+	local vm
+	local sum = 0
+	local count = 0
+	local result
+	m = getMean( t )
+	for k,v in ipairs(t) do
+		vm = v - m
+		sum = sum + (vm * vm)
+		count = count + 1
+	end
+	result = math_sqrt(sum / (count-1))
+	return result
+end
+
+function LAC.AimbotSnap(ply, moveData, CUserCmd)
+	if (!ply:IsValid()) then return end
+	if (!ply:IsPlayer()) then return end
+	local pTable = LAC.GetPTable(ply);
+	if (pTable == nil) then return end
+	if (ply:Health() <= 0 or not ply:Alive() or ply:Team() == TEAM_SPECTATOR) then return end
+	
+	local angles  = moveData:GetAngles()
+	local forward = angles:Forward()
+	
+	-- CMoveData:GetAngles () doesn't catch context menu aiming
+	local eyeTrace = ply:GetEyeTrace()
+	forward = eyeTrace.HitPos - eyeTrace.StartPos
+	forward:Normalize()
+	
+	if (pTable.PreviousAngles && pTable.PreviousForward) then
+		local deltaAngle = math_deg(math_acos(math_min(math_abs(forward:Dot (pTable.PreviousForward)), 1)))
+		
+		if (deltaAngle > 0.05) then
+			table_insert(pTable.DeltaAngleValues, deltaAngle)
+		end
+		
+		if (pTable.PreviousDAngle) then
+			local deltaDeltaAngle = math_abs(deltaAngle - pTable.PreviousDAngle)
+			
+			if (deltaDeltaAngle > 0.05) then
+				local ddSize = #pTable.DDeltaAngleValues
+				table_insert(pTable.DDeltaAngleValues, deltaDeltaAngle)
+				print(ddSize)
+				if (ddSize) >= 180 && deltaDeltaAngle > getMean(pTable.DDeltaAngleValues) + 3 * stDev(pTable.DDeltaAngleValues) then -- confidence interval check
+					pTable.LastSnapEventTime = SysTime()
+					pTable.LastSnapDDAngle = deltaDeltaAngle
+				end
+			end
+		end
+		
+		pTable.PreviousDAngle = deltaAngle
+	end
+
+	pTable.PreviousAngles  = angles
+	pTable.PreviousForward = forward
+end
+
+-- victim, inflictor, attacker
+function LAC.AimbotPlayerKill(victim, inflictor, attacker)
+	if (!victim:IsValid() || !attacker:IsValid()) then return end
+	if (!victim:IsPlayer() || !attacker:IsPlayer()) then return end
+
+	local pTable = LAC.GetPTable(attacker);
+	if (pTable == nil) then return end
+
+	if (victim == attacker) then return end
+	
+	if (pTable.LastSnapEventTime && (SysTime() - pTable.LastSnapEventTime < 0.25)) then
+		local name = victim:GetClass()
+		if (victim:IsPlayer()) then
+			name = victim:GetName()
+		end
+		--attacker:ChatPrint("detec")
+		
+		local DetectionString = string.format("LAC has detected a player snapping " .. string.format("%.2f", pTable.LastSnapDDAngle) .. " degrees towards " .. name .. ". PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
+		LAC.PlayerDetection(DetectionString, attacker)
+	end
+end
+
+local _R_CUserCmd_KeyDown  = debug.getregistry().CUserCmd.KeyDown
+local _R_Entity_IsOnGround = debug.getregistry().Entity.IsOnGround
+
+function LAC.BhopDetector(ply, moveData, CUserCmd)
+	if (!ply:IsValid()) then return end
+	if (!ply:IsPlayer()) then return end
+	local pTable = LAC.GetPTable(ply);
+	if (pTable == nil) then return end
+	if (ply:Health() <= 0 or not ply:Alive() or ply:Team() == TEAM_SPECTATOR) then return end
+	
+	local PreviouslyOnGround = pTable.OnGround
+	local WasInJump	= pTable.InJump
+	
+	local CurrentlyOnGround = _R_Entity_IsOnGround(ply)
+	local CurrentlyInJump   = _R_CUserCmd_KeyDown(CUserCmd, IN_JUMP)
+	
+	if (!PreviouslyOnGround && CurrentlyOnGround) then -- If I just landed (Not on ground, but now I am)
+		if (!WasInJump && CurrentlyInJump) then -- And pressed +jump the instant I landed (I didnt press +jump, now I am)
+			pTable.PerfectJump = pTable.PerfectJump + 1
+
+			if (pTable.PerfectJump > 12) then
+				local DetectionString = string.format("LAC has detected a player jumping " .. pTable.PerfectJump .. " times in a row! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
+				LAC.PlayerDetection(DetectionString, ply)
+			end
+		else
+			pTable.PerfectJump = 0
+		end
+	elseif (CurrentlyOnGround) then
+		if (WasInJump ~= CurrentlyInJump) then
+			pTable.PerfectJump = 0
+		end
+	end
+	
+	pTable.OnGround = CurrentlyOnGround
+	pTable.InJump   = CurrentlyInJump
+end
+
+function LAC.StartCommand(ply, CUserCmd)
+	if (!IsValid(ply)) then return end
+	if (ply:IsBot()) then return end -- fk off bot >:(
+	if (CUserCmd:IsForced()) then return end
+	if (ply:Health() <= 0 or not ply:Alive() or ply:Team() == TEAM_SPECTATOR) then return end
+
+	local pTable = LAC.GetPTable(ply);
+	if (pTable == nil) then 
+		LAC.InitializePlayerTable(ply) -- Just incase the AC runs after someone has already joined.
+		pTable = LAC.GetPTable(ply);
+	end
+
+	pTable.Name = ply:Name()
+
+	if (pTable.Detected) then return end
+
+	if (LAC.IsTTT()) then
+		LAC.CheckContextMenu(ply, CUserCmd);
+		LAC.CheckMovement(ply, CUserCmd)
+	end
+	LAC.CheckEyeAngles(ply, CUserCmd); -- idk, being safe.
+
+	--[[
+		Havent done anything with this function yet
+			TODO: 
+			Aimbot check
+			triggerbot check
+			bhop check
+			spamming check
+	]]
+end
+
+function LAC.CheckContextMenu(ply, CUserCmd)
 	local pTable = LAC.GetPTable(ply)
 	local ContextMenuIsOpen = IsInContextMenu(CUserCmd)
 
@@ -103,12 +304,26 @@ end
 	Directly ripped from CInput::ClampAngles.
 	Afterall, if they dont even clamp their angles, they're probably really bad cheaters, frankly.
 	update: This somehow detects idiots, so now I'm lead to believe people are fucking setting pitch to 350 on the server or some shit.
+
+	update2: --following code is from GrandpaTroll because apparently antiaim does things differently, idk why.
+	eee
 ]]
-local maxPitch = 361
+
 function LAC.CheckEyeAngles(ply, CUserCmd)
 	local pTable = LAC.GetPTable(ply)
 	local viewangles = CUserCmd:GetViewAngles();
 
+	--Game engine will send 0-360 for angles (Don't ask why.)
+	if (viewangles.pitch > 180) then 
+		viewangles.pitch = viewangles.pitch - 360 
+	end
+
+    if (math.abs(viewangles.pitch) > 90) then
+		local DetectionString = string.format("LAC has detected a player with a pitch of %f PlayerName: %s SteamID: %s", viewangles.pitch, pTable.Name, pTable.SteamID32);
+		LAC.PlayerDetection(DetectionString, ply)
+    end
+
+	--[[
 	if (viewangles.pitch > maxPitch) then
 		local DetectionString = string.format("LAC has detected a player with a pitch of %f PlayerName: %s SteamID: %s", viewangles.pitch, pTable.Name, pTable.SteamID32);
 		LAC.PlayerDetection(DetectionString, ply)
@@ -117,7 +332,7 @@ function LAC.CheckEyeAngles(ply, CUserCmd)
 	if (viewangles.pitch < (-maxPitch)) then
 		local DetectionString = string.format("LAC has detected a player with a pitch of %f PlayerName: %s SteamID: %s", viewangles.pitch, pTable.Name, pTable.SteamID32);
 		LAC.PlayerDetection(DetectionString, ply)
-	end
+	end]]
 
 end
 
@@ -156,8 +371,6 @@ possibleUValues[maxUpMove * 0.75] = true
 possibleUValues[maxUpMove] = true
 
 function LAC.CheckMovement(ply, CUserCmd)
-	-- Hasnt been thoroughly tested on other gamemodes
-	if (gmod.GetGamemode().Name != "Trouble in Terrorist Town") then return end
 
 	-- Original values
 	local upmove = CUserCmd:GetUpMove()
@@ -173,7 +386,7 @@ function LAC.CheckMovement(ply, CUserCmd)
 	local pTable = LAC.GetPTable(ply)
 
 	-- Not moving.
-	if (upmoveAbs + sidemoveAbs + forwardmoveAbs == 0) then return end 
+	if (upmoveAbs == 0 && sidemoveAbs == 0 && forwardmoveAbs == 0) then return end
 
 	-- If fmove is greater than max fmove
 	if (forwardmoveAbs > maxForwardMove) then
@@ -281,7 +494,7 @@ function LAC.ReceiveJoystick(len, ply)
 		if (!pTable) then return end
 		
 		if (cvarName == nil or cvarData == nil) then 
-			LAC.LogClientError("LAC has detected a malformed cvar message! From:" .. plyName .. " SteamID: " .. plyID, ply)
+			LAC.LogClientError("LAC has detected a malformed cvar message! Cvar= " .. cvarName .. " = " ..  cvarData .. " PlayerName: " .. plyName .. " SteamID: " .. plyID, player)
 			return
 		end
 
@@ -303,17 +516,19 @@ function LAC.CheckKeyPresses(ply, button)
 	local pTable = LAC.GetPTable(ply)
 	if (!pTable) then return end
 	
-	--[[
-	if (button >= 72 && button <= 77) then 
-		-- Possibly opening a menu
-	end]]
+	if (button >= 72 && button <= 77) then
+		if (ply:GetAbsVelocity():IsZero()) then
+			local DetectionString = string.format("LAC has detected a player pressing a suspicious key while still! %i PlayerName: %s SteamID: %s", button, pTable.Name, pTable.SteamID32);
+			LAC.PlayerSuspiciousDetection(DetectionString, ply)
+		end
+		-- Possibly opening a menu, the velocity is because if someone is in menu, they wouldnt be moving (since 99% of menus prevent other keys from being pressed)
+	end
 		
 	if (button >= 114 && button <= 161) then 
 		pTable.UsesController = true;
 		--print("CONTROLLER CURRENTLY IN USE")
 	end
 end
-hook.Add("PlayerButtonDown", "LAC_PLAYERBUTTONDOWN", LAC.CheckKeyPresses)
 
 --[[
 	This is a debug ban im implementing while im on the server. TL;DR this will ban someone for cheating when I call it. 
@@ -336,42 +551,19 @@ function LAC.DebugCheaterBan(ply, text, teamchat)
 	end
 end
 
-function LAC.StartCommand(ply, CUserCmd)
-	if (!IsValid(ply)) then return end
-	if (ply:IsBot()) then return end -- fk off bot >:(
-	if (CUserCmd:IsForced()) then return end
-	if (ply:Health() <= 0 or not ply:Alive() or ply:Team() == TEAM_SPECTATOR) then return end
-
-	local pTable = LAC.GetPTable(ply);
-	if (pTable == nil) then 
-		LAC.Players[ply:SteamID64()] = {}; -- Just incase the AC runs after someone has already joined.
-	end
-
-	pTable.Name = ply:Name()
-	pTable.SteamID32 = ply:SteamID()
-	pTable.SteamID64 = ply:SteamID64()
-
-	if (pTable.Detected) then return end
-
-	LAC.CheckContextMenu(ply, CUserCmd);
-	LAC.CheckMovement(ply, CUserCmd)
-	LAC.CheckEyeAngles(ply, CUserCmd); -- idk, being safe.
-
-	--[[
-		Havent done anything with this function yet
-			TODO: 
-			Aimbot check
-			triggerbot check
-			bhop check
-			spamming check
-	]]
-end
+--[[
+	add da hooks
+]]
 
 hook.Add("PlayerInitialSpawn", "LAC_SPAWN", LAC.PlayerSpawn)
 hook.Add("PlayerInitialSpawn", "LAC_CONTROLLER_SPAWN", LAC.ControllerQuestion)
 hook.Add("PlayerDisconnected", "LAC_DISCONNECT", LAC.PlayerDisconnect)
 hook.Add("StartCommand", "LAC_STARTCOMMAND", LAC.StartCommand)
 hook.Add("PlayerSay", "LAC_DEBUGBAN", LAC.DebugCheaterBan)
+hook.Add("PlayerButtonDown", "LAC_PLAYERBUTTONDOWN", LAC.CheckKeyPresses)
+hook.Add("SetupMove", "LAC_AIMBOTSNAP", LAC.AimbotSnap)
+hook.Add("SetupMove", "LAC_BHOPCHECK", LAC.BhopDetector)
+hook.Add("PlayerDeath", "LAC_DEATH_AIMBOTCHECK", LAC.AimbotPlayerKill)
 
 --[[
 	Load detection sub-modules that get sent to the client/interact with them.
@@ -382,71 +574,3 @@ include("detections/modules/sv_cvars.lua")
 include("detections/modules/sv_spec.lua")
  -- last thing in the file, or, should be lol.
 --LAC.LogMainFile("Detection System Loaded.")
-
-
-
---[[
-	This is an attempt at catching aimbotters via massive angle jumps.
-	idk lol
-	This is currently not called since Ive yet to implement it properly. Just some code references that I had help using leystryku.
-
-
-function LAC.CheckAimAngles(ply, CUserCmd)
-	local pTable = LAC.GetPTable(ply)
-	local viewangles = CUserCmd:GetViewAngles();
-	local acos = math.acos
-	local deg = math.deg
-	local abs = math.abs
-
-
-	if (pTable.AimingTable == nil) then 
-		pTable.AimingTable = {}
-	end
-
-	local aimingRecord = 
-	{
-		buttons = CUserCmd:GetButtons(),
-		angles = CUserCmd:GetViewAngles(),
-		--AimingAtSomeone = IsValid(ply:GetEyeTrace().Entity),
-	}
-	
-	table.insert(pTable.AimingTable, aimingRecord)
-	local aimRecordSize = #pTable.AimingTable
-	--print("records currently: " ..aimRecordSize)
-
-	local LastRecord = nil
-	local degreeAverage = 0;
-	local degreeTotal = 0;
-
-	for i = 1, aimRecordSize do
-		if (i == 1) then 
-			LastRecord = pTable.AimingTable[i];
-			continue;
-		end
-		
-		local CurAngle = pTable.AimingTable[i].angles:Forward()
-		local PrevAngle = LastRecord.angles:Forward()
-
-		if (abs(abs(CurAngle.x) - abs(PrevAngle.x)) < 1) then 
-			local dot = CurAngle:Dot(PrevAngle)
-			local degreeDiff = deg(acos(dot))
-			--print(degreeDiff)
-			degreeTotal = degreeTotal + degreeDiff
-		end
-	end
-
-	degreeAverage = degreeTotal / aimRecordSize
-	if (degreeAverage > 1) then
-		print(degreeAverage)
-	end
-
-	if (aimRecordSize > 35) then
-		local delete = (aimRecordSize - 34)
-
-		for i = 1, delete do
-			table.remove(pTable.AimingTable, 1)
-		end
-	end
-
-end
-]]

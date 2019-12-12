@@ -11,7 +11,7 @@ function LAC.ReceiveDataCvar(len, ply)
 		local plyID = player:SteamID()
 		
 		if (cvarName == nil or cvarData == nil) then 
-			LAC.LogClientError("LAC has detected a malformed cvar message! From:" .. plyName .. " SteamID: " .. plyID, player)
+			LAC.LogClientError("LAC has detected a malformed cvar message! Cvar= " .. cvarName .. " = " ..  cvarData .. " PlayerName: " .. plyName .. " SteamID: " .. plyID, player)
 			return
 		end
 		
