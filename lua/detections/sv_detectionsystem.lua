@@ -183,7 +183,7 @@ function LAC.AimbotSnap(ply, moveData, CUserCmd)
 			if (deltaDeltaAngle > 0.05) then
 				local ddSize = #pTable.DDeltaAngleValues
 				table_insert(pTable.DDeltaAngleValues, deltaDeltaAngle)
-				print(ddSize)
+				
 				if (ddSize) >= 180 && deltaDeltaAngle > getMean(pTable.DDeltaAngleValues) + 3 * stDev(pTable.DDeltaAngleValues) then -- confidence interval check
 					pTable.LastSnapEventTime = SysTime()
 					pTable.LastSnapDDAngle = deltaDeltaAngle
