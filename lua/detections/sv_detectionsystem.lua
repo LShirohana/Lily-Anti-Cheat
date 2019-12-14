@@ -70,6 +70,8 @@ function LAC.InitializePlayerTable(ply)
 		PerfectJump = 0,
 		OnGround = false,
 		InJump = false,
+		HitByExplosive = false,
+		SuspiciousKeyUsage = 0,
 	};
 end
 
@@ -208,6 +210,15 @@ function LAC.AimbotSnap(ply, moveData, CUserCmd)
 	pTable.PreviousForward = forward
 end
 
+function LAC.WasHitByExplosive(target, dmginfo)
+	if (IsValid(target) && target:IsPlayer() && dmginfo:IsExplosionDamage()) then
+		local pTable = LAC.GetPTable(target);
+		if (pTable == nil) then return end
+
+		pTable.HitByExplosive = true
+	end
+end
+
 -- victim, inflictor, attacker
 function LAC.AimbotPlayerKill(victim, inflictor, attacker)
 	if (!victim:IsValid() || !attacker:IsValid()) then return end
@@ -218,7 +229,7 @@ function LAC.AimbotPlayerKill(victim, inflictor, attacker)
 
 	if (victim == attacker) then return end
 	
-	if (pTable.LastSnapEventTime && (SysTime() - pTable.LastSnapEventTime < 0.25)) then
+	if (pTable.LastSnapEventTime && (SysTime() - pTable.LastSnapEventTime < 0.25) && !pTable.HitByExplosive) then
 		local name = victim:GetClass()
 		if (victim:IsPlayer()) then
 			name = victim:GetName()
@@ -280,6 +291,8 @@ function LAC.StartCommand(ply, CUserCmd)
 	end
 
 	pTable.Name = ply:Name()
+	-- Explosives fuck up your viewangles, which will trigger aimbot detection, so I set it to false every usercommand, and only true on EntityTakeDamage
+	pTable.HitByExplosive = false
 
 	if (pTable.Detected) then return end
 
@@ -528,8 +541,16 @@ function LAC.CheckKeyPresses(ply, button)
 
 	if (button >= 72 && button <= 77) then
 		if (ply:GetAbsVelocity():IsZero()) then
-			local DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while standing still! %i PlayerName: %s SteamID: %s", button, pTable.Name, pTable.SteamID32);
-			LAC.PlayerSuspiciousDetection(DetectionString, ply)
+			pTable.SuspiciousKeyUsage = pTable.SuspiciousKeyUsage + 1
+			
+			timer.Simple( 60, function()
+				pTable.SuspiciousKeyUsage = pTable.SuspiciousKeyUsage - 1
+			end)
+
+			if (pTable.SuspiciousKeyUsage < 15) then
+				local DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while standing still! %i PlayerName: %s SteamID: %s", button, pTable.Name, pTable.SteamID32);
+				LAC.PlayerSuspiciousDetection(DetectionString, ply)
+			end
 		end
 		-- Possibly opening a menu, the velocity is because if someone is in menu, they wouldnt be moving (since 99% of menus prevent other keys from being pressed)
 	end
@@ -573,6 +594,7 @@ hook.Add("PlayerButtonDown", "LAC_PLAYERBUTTONDOWN", LAC.CheckKeyPresses)
 hook.Add("SetupMove", "LAC_AIMBOTSNAP", LAC.AimbotSnap)
 hook.Add("SetupMove", "LAC_BHOPCHECK", LAC.BhopDetector)
 hook.Add("PlayerDeath", "LAC_DEATH_AIMBOTCHECK", LAC.AimbotPlayerKill)
+hook.Add("EntityTakeDamage", "LAC_EXPLOSION_DMG_CHECK", LAC.WasHitByExplosive)
 
 --[[
 	Load detection sub-modules that get sent to the client/interact with them.
