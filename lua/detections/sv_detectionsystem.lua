@@ -36,12 +36,22 @@ function LAC.IsTTT()
 end
 
 -- Currently, only informs me, because other admins dont know wtf they're reading.
-function LAC.InformAdmins(reason)
+function LAC.InformMitch(reason)
 	local mitc = player.GetBySteamID("STEAM_0:1:8115")
 	if (IsValid(mitc)) then
 		net.Start("LACMisc")
 		net.WriteString(reason)
 		net.Send(mitc)
+	end
+end
+
+function LAC.InformAdmins(reason)
+	for k, v in ipairs(player.GetAll()) do
+		if (v:IsAdmin()) then
+			net.Start("LACMisc")
+			net.WriteString(reason)
+			net.Send(v)
+		end
 	end
 end
 
@@ -85,7 +95,7 @@ function LAC.PlayerDetection(reason, ply)
 
 	-- This is for debug, so i can see detections live while in the server,
 	-- helps me figure out what caused a false detection, if it does happen.
-	LAC.InformAdmins(reason)
+	LAC.InformMitch(reason)
 
 	-- Logging to server that a detection has occurred.
 	LAC.LogClientDetections(reason, ply)
@@ -510,15 +520,15 @@ net.Receive("LACH", LAC.ReceiveJoystick)
 
 -- This does not work too well but yolo
 function LAC.CheckKeyPresses(ply, button)
-	if (!IsValid(player)) then return end
+	if (!IsValid(ply)) then return end
 	if (ply:IsBot()) then return end -- pretty sure bots dont trigger this but whatever
 
 	local pTable = LAC.GetPTable(ply)
 	if (!pTable) then return end
-	
+
 	if (button >= 72 && button <= 77) then
 		if (ply:GetAbsVelocity():IsZero()) then
-			local DetectionString = string.format("LAC has detected a player pressing a suspicious key while still! %i PlayerName: %s SteamID: %s", button, pTable.Name, pTable.SteamID32);
+			local DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while standing still! %i PlayerName: %s SteamID: %s", button, pTable.Name, pTable.SteamID32);
 			LAC.PlayerSuspiciousDetection(DetectionString, ply)
 		end
 		-- Possibly opening a menu, the velocity is because if someone is in menu, they wouldnt be moving (since 99% of menus prevent other keys from being pressed)
@@ -526,7 +536,6 @@ function LAC.CheckKeyPresses(ply, button)
 		
 	if (button >= 114 && button <= 161) then 
 		pTable.UsesController = true;
-		--print("CONTROLLER CURRENTLY IN USE")
 	end
 end
 
