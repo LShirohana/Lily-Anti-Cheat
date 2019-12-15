@@ -535,13 +535,33 @@ function LAC.ReceiveJoystick(len, ply)
 end
 net.Receive("LACH", LAC.ReceiveJoystick)
 
+--[[
+client-side portion that i'd send
+
+local smc = {}
+hook.Add("CreateMove", "Mouse_Click", function(cmd)
+	local cmd = cmd:CommandNumber()
+	if (cmd == 0) then return end
+	if (smc[cmd] != nil) then
+		net.Start("ULX_PSD")
+		net.SendToServer()
+	end
+	smc[cmd] = 0
+end)
+
+hook.Add("SetupMove", "LiquidPhysics", function(ply, mv, cmd)
+	if (cmd:CommandNumber() == 0) then return end
+	smc[cmd:CommandNumber()] = true
+end)
+]]
+
 function LAC.ReceiveEnginePred(len, ply)
 	if ( IsValid( ply ) && ply:IsPlayer() ) then
 		
 		local pTable = LAC.GetPTable(ply)
 		if (!pTable) then return end
 		
-		local DetectionString = string.format("LAC has detected a player with out-of-order SetupMove! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
+		local DetectionString = string.format("LAC has detected a player with out-of-order SM! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
 		LAC.PlayerDetection(DetectionString, ply)
 	end
 end
