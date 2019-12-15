@@ -2,16 +2,15 @@ LAC = LAC or {}
 
 function LAC.ReceiveDataCvar(len, ply)
 
-	local player = ply
-	if ( IsValid( player ) and player:IsPlayer() ) then
+	if ( IsValid( ply ) and ply:IsPlayer() ) then
 		local cvarName = net.ReadString()
 		local cvarData = net.ReadString()
 		
-		local plyName = player:Name()
-		local plyID = player:SteamID()
+		local plyName = ply:Name()
+		local plyID = ply:SteamID()
 		
 		if (cvarName == nil or cvarData == nil) then 
-			LAC.LogClientError("LAC has detected a malformed cvar message! Cvar= " .. cvarName .. " = " ..  cvarData .. " PlayerName: " .. plyName .. " SteamID: " .. plyID, player)
+			LAC.LogClientError("LAC has detected a malformed cvar message! Cvar= " .. cvarName .. " = " ..  cvarData .. " PlayerName: " .. plyName .. " SteamID: " .. plyID, ply)
 			return
 		end
 		
@@ -24,7 +23,7 @@ function LAC.ReceiveDataCvar(len, ply)
 		]]
 
 		if (serverValue != cvarData) then
-			LAC.LogClientDetections("LAC has detected an incorrect Cvar! Cvar= " .. cvarName .. " = " ..  cvarData .. " PlayerName: " .. plyName .. " SteamID: " .. plyID, player)
+			LAC.LogClientDetections("LAC has detected an incorrect Cvar! Cvar= " .. cvarName .. " = " ..  cvarData .. " PlayerName: " .. plyName .. " SteamID: " .. plyID, ply)
 			return
 		end
 		
@@ -32,9 +31,9 @@ function LAC.ReceiveDataCvar(len, ply)
 end
 net.Receive("LACDataC", LAC.ReceiveDataCvar)
 
-function LAC.BeginDataCvarChallenge(player)
+function LAC.BeginDataCvarChallenge(ply)
 
-	if ( !IsValid(player) or player:IsBot() ) then return end
+	if ( !IsValid(ply) or ply:IsBot() ) then return end
 
 	--[[ 
 		We cannot rely on a client to send their cvars via a callback, it's better to ask them occasionally, for the hell of it.
@@ -61,7 +60,7 @@ function LAC.BeginDataCvarChallenge(player)
 	]]
 
 	--print(challengeCode)
-	player:SendLua(challengeCode)
+	ply:SendLua(challengeCode)
 end
 
 function LAC.ChooseRandomPlayerForCvarChallenge()

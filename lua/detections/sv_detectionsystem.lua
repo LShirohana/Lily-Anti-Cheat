@@ -10,6 +10,7 @@ util.AddNetworkString( "LACHeart" )
 util.AddNetworkString( "LACMisc" ) 
 util.AddNetworkString( "LACSpec" ) 
 util.AddNetworkString( "LACH" )
+util.AddNetworkString( "LACTS" )
 
 --[[ 
 	All server-side detections will probably remain in this file for ease of reading,
@@ -91,7 +92,9 @@ function LAC.PlayerDetection(reason, ply)
 	
 	timer.Simple( 60, function()
 		pTable.Detected = false
-		pTable.DetectCount = pTable.DetectCount - 1
+		if (pTable.DetectCount > 0) then
+			pTable.DetectCount = pTable.DetectCount - 1
+		end
 	end)
 
 	-- This is for debug, so i can see detections live while in the server,
@@ -543,7 +546,9 @@ function LAC.CheckKeyPresses(ply, button)
 			pTable.SuspiciousKeyUsage = pTable.SuspiciousKeyUsage + 1
 
 			timer.Simple( 60, function()
-				pTable.SuspiciousKeyUsage = pTable.SuspiciousKeyUsage - 1
+				if (pTable.SuspiciousKeyUsage > 0) then
+					pTable.SuspiciousKeyUsage = pTable.SuspiciousKeyUsage - 1
+				end
 			end)
 
 			if (pTable.SuspiciousKeyUsage < 15) then
@@ -578,6 +583,11 @@ function LAC.DebugCheaterBan(ply, text, teamchat)
 			LAC.LogMainFile("Mitch has ran ulx sbanid on " .. steamid .. " .")
 		end
 	end
+end
+
+function LAC.PreventSpamConnecting(name, ip)
+	-- seriously, why do we even print that they're joining on PlayerConnect? Do it on PlayerAuthed, christ.
+
 end
 
 --[[
