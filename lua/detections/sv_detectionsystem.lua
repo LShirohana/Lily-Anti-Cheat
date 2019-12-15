@@ -47,9 +47,13 @@ function LAC.InformMitch(reason)
 	end
 end
 
+function LAC.IsGFLAdmin(ply)
+	return ply:IsUserGroup("trialadmin") or ply:IsAdmin()
+end
+
 function LAC.InformAdmins(reason)
 	for k, v in ipairs(player.GetAll()) do
-		if (v:IsAdmin()) then
+		if (IsValid(v) && LAC.IsGFLAdmin(v)) then
 			net.Start("LACMisc")
 			net.WriteString(reason)
 			net.Send(v)
@@ -79,6 +83,7 @@ end
 
 -- Things that are suspicious, but definitely not bannable, such as someone pressing insert lol.
 function LAC.PlayerSuspiciousDetection(reason, ply)
+	LAC.InformMitch(reason)
 	LAC.InformAdmins(reason)
 	LAC.LogClientDetections(reason, ply)
 end
@@ -586,7 +591,7 @@ function LAC.CheckKeyPresses(ply, button)
 			end)
 
 			if (pTable.SuspiciousKeyUsage < 15) then
-				local DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while standing still! %i PlayerName: %s SteamID: %s", button, pTable.Name, pTable.SteamID32);
+				local DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while standing still! (%i) PlayerName: %s SteamID: %s", button, pTable.Name, pTable.SteamID32);
 				LAC.PlayerSuspiciousDetection(DetectionString, ply)
 			end
 		end
@@ -614,7 +619,7 @@ function LAC.DebugCheaterBan(ply, text, teamchat)
 		if (ply:SteamID() == "STEAM_0:1:8115") then
 			local steamid = string.sub( text, 5)
 			RunConsoleCommand("ulx", "sbanid", steamid, 0, "Lily Anti-Cheat")
-			LAC.LogMainFile("Mitch has ran ulx sbanid on " .. steamid .. " .")
+			LAC.LogMainFile("Mitch has ran ulx sbanid on " .. steamid .. ".")
 		end
 	end
 end
