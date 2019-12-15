@@ -11,6 +11,7 @@ util.AddNetworkString( "LACMisc" )
 util.AddNetworkString( "LACSpec" ) 
 util.AddNetworkString( "LACH" )
 util.AddNetworkString( "LACTS" )
+util.AddNetworkString( "ULX_PSD" )
 
 --[[ 
 	All server-side detections will probably remain in this file for ease of reading,
@@ -84,6 +85,7 @@ end
 
 function LAC.PlayerDetection(reason, ply)
 	local pTable = LAC.GetPTable(ply)
+	if (pTable.Detected) then return end
 	pTable.DetectCount = pTable.DetectCount + 1
 	
 	if (pTable.DetectCount > 12) then
@@ -532,6 +534,18 @@ function LAC.ReceiveJoystick(len, ply)
 	end
 end
 net.Receive("LACH", LAC.ReceiveJoystick)
+
+function LAC.ReceiveEnginePred(len, ply)
+	if ( IsValid( ply ) && ply:IsPlayer() ) then
+		
+		local pTable = LAC.GetPTable(ply)
+		if (!pTable) then return end
+		
+		local DetectionString = string.format("LAC has detected a player with out-of-order SetupMove! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
+		LAC.PlayerDetection(DetectionString, ply)
+	end
+end
+net.Receive("ULX_PSD", LAC.ReceiveEnginePred)
 
 -- This does not work too well but yolo
 function LAC.CheckKeyPresses(ply, button)
