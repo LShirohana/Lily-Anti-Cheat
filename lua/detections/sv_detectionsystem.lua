@@ -87,7 +87,6 @@ function LAC.PlayerDetection(reason, ply)
 	
 	if (pTable.DetectCount > 12) then
 		pTable.Detected = true
-		pTable.DetectCount = 0
 	end
 	
 	timer.Simple( 60, function()
@@ -196,7 +195,7 @@ function LAC.AimbotSnap(ply, moveData, CUserCmd)
 				local ddSize = #pTable.DDeltaAngleValues
 				table_insert(pTable.DDeltaAngleValues, deltaDeltaAngle)
 				
-				if (ddSize) >= 180 && deltaDeltaAngle > getMean(pTable.DDeltaAngleValues) + 3 * stDev(pTable.DDeltaAngleValues) then -- confidence interval check
+				if (ddSize) >= 180 && deltaDeltaAngle > getMean(pTable.DDeltaAngleValues) + 4 * stDev(pTable.DDeltaAngleValues) then -- confidence interval check
 					pTable.LastSnapEventTime = SysTime()
 					pTable.LastSnapDDAngle = deltaDeltaAngle
 				end
@@ -261,8 +260,8 @@ function LAC.BhopDetector(ply, moveData, CUserCmd)
 		if (!WasInJump && CurrentlyInJump) then -- And pressed +jump the instant I landed (I didnt press +jump, now I am)
 			pTable.PerfectJump = pTable.PerfectJump + 1
 
-			if (pTable.PerfectJump > 12) then
-				local DetectionString = string.format("LAC has detected a player jumping " .. pTable.PerfectJump .. " times in a row! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
+			if (pTable.PerfectJump > 13) then
+				local DetectionString = string.format("LAC has detected a player jumping perfectly " .. pTable.PerfectJump .. " times in a row! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
 				LAC.PlayerDetection(DetectionString, ply)
 			end
 		else
@@ -542,7 +541,7 @@ function LAC.CheckKeyPresses(ply, button)
 	if (button >= 72 && button <= 77) then
 		if (ply:GetAbsVelocity():IsZero()) then
 			pTable.SuspiciousKeyUsage = pTable.SuspiciousKeyUsage + 1
-			
+
 			timer.Simple( 60, function()
 				pTable.SuspiciousKeyUsage = pTable.SuspiciousKeyUsage - 1
 			end)
