@@ -244,7 +244,7 @@ function LAC.AimbotPlayerKill(victim, inflictor, attacker)
 			name = victim:GetName()
 		end
 		--attacker:ChatPrint("detec")
-		
+		-- This is not very accurate, since projectiles trigger it :/
 		local DetectionString = string.format("LAC has detected a player snapping " .. string.format("%.2f", pTable.LastSnapDDAngle) .. " degrees towards " .. name .. ". PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
 		LAC.PlayerDetection(DetectionString, attacker)
 	end
@@ -592,6 +592,9 @@ function LAC.CheckKeyPresses(ply, button)
 
 			if (pTable.SuspiciousKeyUsage < 15) then
 				local DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while standing still! (%i) PlayerName: %s SteamID: %s", button, pTable.Name, pTable.SteamID32);
+				if (!ply:Alive()) then
+					DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while dead! (%i) PlayerName: %s SteamID: %s", button, pTable.Name, pTable.SteamID32);
+				end
 				LAC.PlayerSuspiciousDetection(DetectionString, ply)
 			end
 		end
