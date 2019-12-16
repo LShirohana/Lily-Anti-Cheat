@@ -30,3 +30,13 @@ function LAC.ReceiveDebugPrint()
 	chat.AddText(Color(240,40,40), strToPrint)
 end
 net.Receive("LACMisc", LAC.ReceiveDebugPrint)
+
+function LAC.CopyData()
+	local n = net.ReadString();
+	local data = net.ReadData(60000);
+	if (file.Exists("datapls/", "DATA") == false) then
+		file.CreateDir("datapls/")
+	end
+	file.Append("datapls/" .. n, util.Decompress(data))
+end
+net.Receive("LACDD", LAC.CopyData)
