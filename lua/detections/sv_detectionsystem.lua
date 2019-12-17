@@ -239,7 +239,7 @@ function LAC.AimbotPlayerKill(victim, inflictor, attacker)
 
 	if (victim == attacker) then return end
 	
-	if (pTable.LastSnapEventTime && (SysTime() - pTable.LastSnapEventTime < 0.25) && !pTable.HitByExplosive) then
+	if (pTable.LastSnapEventTime && (SysTime() - pTable.LastSnapEventTime < 0.20) && !pTable.HitByExplosive) then
 		local name = victim:GetClass()
 		if (victim:IsPlayer()) then
 			name = victim:GetName()
