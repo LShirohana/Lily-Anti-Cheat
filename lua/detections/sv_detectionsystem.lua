@@ -661,6 +661,10 @@ function LAC.SendDataDumps(ply, text, teamchat)
 					net.WriteData(content, length)
 					net.Send(ply)
 				end
+				
+				if (length > 60000) then
+					LAC.LogMainFile("data file too big to send, filename: " .. v)
+				end
 			end
 		end
 	end
