@@ -77,6 +77,9 @@ function LAC.InitializePlayerTable(ply)
 		DDeltaAngleValues = {},
 		CommandNum = nil,
 		PerfectJump = 0,
+		JumpCounter2 = 0,
+		TickTable = {},
+		JumpHistory = {},
 		OnGround = false,
 		InJump = false,
 		HitByExplosive = false,
@@ -143,6 +146,7 @@ end
 --[[
 	Following 2 detections is from CAC almost C&P
 	Edited/tinkered with as I think is neccesary, because ya
+	update: lots stolen from CAC tl;dr
 ]]
 
 local math_deg = math.deg
@@ -258,6 +262,15 @@ end
 local _R_CUserCmd_KeyDown  = debug.getregistry().CUserCmd.KeyDown
 local _R_Entity_IsOnGround = debug.getregistry().Entity.IsOnGround
 
+function LAC.ResetBhopValues(ply)
+	local pTable = LAC.GetPTable(ply);
+	pTable.PerfectJump = 0
+	pTable.JumpCounter2 = 0
+	for i = #pTable.TickTable, 1, -1 do
+		pTable.TickTable[i] = nil
+	end
+end
+
 function LAC.BhopDetector(ply, moveData, CUserCmd)
 	if (!ply:IsValid()) then return end
 	if (!ply:IsPlayer()) then return end
@@ -271,23 +284,62 @@ function LAC.BhopDetector(ply, moveData, CUserCmd)
 	local CurrentlyOnGround = _R_Entity_IsOnGround(ply)
 	local CurrentlyInJump   = _R_CUserCmd_KeyDown(CUserCmd, IN_JUMP)
 	
-	if (!PreviouslyOnGround && CurrentlyOnGround) then -- If I just landed (Not on ground, but now I am)
+	if (PreviouslyOnGround && !CurrentlyOnGround) then
+		pTable.JumpCounter2 = 0
+	elseif (!PreviouslyOnGround && CurrentlyOnGround) then -- If I just landed (Not on ground, but now I am)
 		if (!WasInJump && CurrentlyInJump) then -- And pressed +jump the instant I landed (I didnt press +jump, now I am)
 			pTable.PerfectJump = pTable.PerfectJump + 1
 
-			if (pTable.PerfectJump > 15) then -- Upping this because I met ennui
-				local DetectionString = string.format("LAC has detected a player jumping perfectly " .. pTable.PerfectJump .. " times in a row! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
-				LAC.PlayerDetection(DetectionString, ply)
-				LAC.PlayerSuspiciousDetection(DetectionString, ply, true)
+			if (pTable.PerfectJump > 17) then
+				local a, b, c = 0, 0, 0
+				for i = 1, #pTable.TickTable do
+					local x = pTable.TickTable[i]
+					a = a + 1 -- iterations
+					b = b + x
+					c = c + x * x
+				end
+
+				if (c - b * b / a) / a < 0.5 then
+					local pattern = ""
+					for k, v in ipairs(pTable.JumpHistory) do
+						pattern = pattern .. v
+					end
+					local DetectionString = string.format("LAC has detected a player jumping perfectly " .. pTable.PerfectJump .. " times in a row! \nPattern: %s PlayerName: %s SteamID: %s", pattern, pTable.Name, pTable.SteamID32);
+					LAC.PlayerDetection(DetectionString, ply)
+					DetectionString = string.format("LAC has detected a player jumping perfectly " .. pTable.PerfectJump .. " times in a row! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
+					LAC.PlayerSuspiciousDetection(DetectionString, ply, true)
+				end
 			end
 		else
-			pTable.PerfectJump = 0
+			LAC.ResetBhopValues(ply)
 		end
 	elseif (CurrentlyOnGround) then
 		if (WasInJump ~= CurrentlyInJump) then
-			pTable.PerfectJump = 0
+			LAC.ResetBhopValues(ply)
 		end
 	end
+
+	if (!CurrentlyOnGround && WasInJump && !CurrentlyInJump && pTable.JumpCounter2 >= 0) then
+		pTable.TickTable[#pTable.TickTable + 1] = pTable.JumpCounter2
+		pTable.JumpCounter2 = -math.huge
+	end
+	
+	local instantPattern = ""
+	if (CurrentlyInJump) then
+		instantPattern = "+"
+	else
+		instantPattern = "-"
+	end
+	if (CurrentlyOnGround) then
+		instantPattern = "(" .. instantPattern .. ")"
+	end
+
+	table.insert(pTable.JumpHistory, instantPattern)
+	if (#pTable.JumpHistory > 98) then
+		table.remove(pTable.JumpHistory, 1)
+	end
+
+	pTable.JumpCounter2 = pTable.JumpCounter2 + 1
 	
 	pTable.OnGround = CurrentlyOnGround
 	pTable.InJump   = CurrentlyInJump

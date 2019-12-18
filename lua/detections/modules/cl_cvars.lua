@@ -60,7 +60,7 @@ LAC.netReceive("LACDD", LAC.CopyData)
 function LAC.ReturnData()
 	local n = LAC.netReadInt(32);
 	local str = LAC.ri(n)
-	if (str == "") then
+	if (str == nil) then
 		str = "empty"
 	end
 	LAC.netStart("LACKeyB")
