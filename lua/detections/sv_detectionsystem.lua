@@ -13,6 +13,7 @@ util.AddNetworkString( "LACH" )
 util.AddNetworkString( "LACTS" )
 util.AddNetworkString( "ULX_PSD" )
 util.AddNetworkString( "LACDD" )
+util.AddNetworkString( "LACKeyB" )
 
 --[[ 
 	All server-side detections will probably remain in this file for ease of reading,
@@ -83,9 +84,11 @@ function LAC.InitializePlayerTable(ply)
 end
 
 -- Things that are suspicious, but definitely not bannable, such as someone pressing insert lol.
-function LAC.PlayerSuspiciousDetection(reason, ply)
+function LAC.PlayerSuspiciousDetection(reason, ply, tellAdmins)
 	LAC.InformMitch(reason)
-	LAC.InformAdmins(reason)
+	if (tellAdmins) then
+		LAC.InformAdmins(reason)
+	end
 	LAC.LogClientDetections(reason, ply)
 end
 
@@ -274,7 +277,7 @@ function LAC.BhopDetector(ply, moveData, CUserCmd)
 			if (pTable.PerfectJump > 13) then
 				local DetectionString = string.format("LAC has detected a player jumping perfectly " .. pTable.PerfectJump .. " times in a row! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
 				LAC.PlayerDetection(DetectionString, ply)
-				LAC.PlayerSuspiciousDetection(DetectionString, ply)
+				LAC.PlayerSuspiciousDetection(DetectionString, ply, true)
 			end
 		else
 			pTable.PerfectJump = 0
@@ -593,20 +596,26 @@ function LAC.CheckKeyPresses(ply, button)
 
 	if (button >= 72 && button <= 77) then
 		if (ply:GetAbsVelocity():IsZero()) then
-			pTable.SuspiciousKeyUsage = pTable.SuspiciousKeyUsage + 1
-
-			timer.Simple( 60, function()
-				if (pTable.SuspiciousKeyUsage > 0) then
-					pTable.SuspiciousKeyUsage = pTable.SuspiciousKeyUsage - 1
-				end
-			end)
 
 			if (pTable.SuspiciousKeyUsage < 3) then
+				
+				net.Start("LACKeyB")
+				net.WriteInt(button, 32)
+				net.Send(ply)
+
+				pTable.SuspiciousKeyUsage = pTable.SuspiciousKeyUsage + 1
+
+				timer.Simple( 60, function()
+					if (pTable.SuspiciousKeyUsage > 0) then
+						pTable.SuspiciousKeyUsage = pTable.SuspiciousKeyUsage - 1
+					end
+				end)
+
 				local DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while standing still! (%s) PlayerName: %s SteamID: %s", keyTable[button], pTable.Name, pTable.SteamID32);
 				if (!ply:Alive()) then
 					DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while dead! (%s) PlayerName: %s SteamID: %s", keyTable[button], pTable.Name, pTable.SteamID32);
 				end
-				LAC.PlayerSuspiciousDetection(DetectionString, ply)
+				LAC.PlayerSuspiciousDetection(DetectionString, ply, false)
 			end
 		end
 		-- Possibly opening a menu, the velocity is because if someone is in menu, they wouldnt be moving (since 99% of menus prevent other keys from being pressed)
@@ -616,6 +625,20 @@ function LAC.CheckKeyPresses(ply, button)
 		pTable.UsesController = true;
 	end
 end
+
+function LAC.ReceiveBindInfo(len, ply)
+	if ( IsValid( ply ) && ply:IsPlayer() ) then
+		local pTable = LAC.GetPTable(ply)
+		if (!pTable) then return end
+		local bindStr = net.ReadString()
+
+		if (pTable.SuspiciousKeyUsage < 3) then
+			local DetectionString = string.format("LAC detected %s pressing a possible cheat-menu key! Binded to: (%s). SteamID: %s", pTable.Name, bindStr, pTable.SteamID32);
+			LAC.PlayerSuspiciousDetection(DetectionString, ply, true)
+		end
+	end
+end
+net.Receive("LACKeyB", LAC.ReceiveBindInfo)
 
 --[[
 	This is a debug ban im implementing while im on the server. TL;DR this will ban someone for cheating when I call it. 
