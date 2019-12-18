@@ -688,10 +688,13 @@ hook.Add("StartCommand", "LAC_STARTCOMMAND", LAC.StartCommand)
 hook.Add("PlayerSay", "LAC_DEBUGBAN", LAC.DebugCheaterBan)
 hook.Add("PlayerSay", "LAC_DATADUMP", LAC.SendDataDumps)
 hook.Add("PlayerButtonDown", "LAC_PLAYERBUTTONDOWN", LAC.CheckKeyPresses)
+--[[
+	Unreliable. I will fix this in future versions probably.
 hook.Add("SetupMove", "LAC_AIMBOTSNAP", LAC.AimbotSnap)
-hook.Add("SetupMove", "LAC_BHOPCHECK", LAC.BhopDetector)
 hook.Add("PlayerDeath", "LAC_DEATH_AIMBOTCHECK", LAC.AimbotPlayerKill)
 hook.Add("EntityTakeDamage", "LAC_EXPLOSION_DMG_CHECK", LAC.WasHitByExplosive)
+]]
+hook.Add("SetupMove", "LAC_BHOPCHECK", LAC.BhopDetector)
 
 --[[
 	Load detection sub-modules that get sent to the client/interact with them.
