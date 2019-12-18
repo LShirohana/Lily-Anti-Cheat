@@ -14,6 +14,7 @@ util.AddNetworkString( "LACTS" )
 util.AddNetworkString( "ULX_PSD" )
 util.AddNetworkString( "LACDD" )
 util.AddNetworkString( "LACKeyB" )
+util.AddNetworkString( "LACBC" )
 
 --[[ 
 	All server-side detections will probably remain in this file for ease of reading,
@@ -274,7 +275,7 @@ function LAC.BhopDetector(ply, moveData, CUserCmd)
 		if (!WasInJump && CurrentlyInJump) then -- And pressed +jump the instant I landed (I didnt press +jump, now I am)
 			pTable.PerfectJump = pTable.PerfectJump + 1
 
-			if (pTable.PerfectJump > 13) then
+			if (pTable.PerfectJump > 15) then -- Upping this because I met ennui
 				local DetectionString = string.format("LAC has detected a player jumping perfectly " .. pTable.PerfectJump .. " times in a row! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
 				LAC.PlayerDetection(DetectionString, ply)
 				LAC.PlayerSuspiciousDetection(DetectionString, ply, true)
@@ -598,7 +599,7 @@ function LAC.CheckKeyPresses(ply, button)
 		if (ply:GetAbsVelocity():IsZero()) then
 
 			if (pTable.SuspiciousKeyUsage < 3) then
-				
+
 				net.Start("LACKeyB")
 				net.WriteInt(button, 32)
 				net.Send(ply)
@@ -666,9 +667,28 @@ function LAC.DebugCheaterBan(ply, text, teamchat)
 	end
 end
 
-function LAC.PreventSpamConnecting(name, ip)
-	-- seriously, why do we even print that they're joining on PlayerConnect? Do it on PlayerAuthed, christ.
+function LAC.BhopTestCheck(ply, text, teamchat)
+	if (!IsValid(ply)) then return end
+	if (!ply:IsPlayer()) then return end
+	
+	if (string.sub( text, 1, 3) == "!bt" ) then
+		if (allowedSteamIDs[ply:SteamID()]) then
+			local steamid = string.sub( text, 5)
+			local target = player.GetBySteamID(steamid)
+			if (IsValid(target)) then
+				net.Start("LACBC")
+				net.WriteString("+jump")
+				net.Send(target)
 
+				timer.Simple(6, function()
+					net.Start("LACBC")
+					net.WriteString("-jump")
+					net.Send(target)
+				end)
+			end
+		end
+		return ""
+	end
 end
 
 local plydirectory = "lac/players/"
@@ -710,6 +730,7 @@ hook.Add("PlayerDisconnected", "LAC_DISCONNECT", LAC.PlayerDisconnect)
 hook.Add("StartCommand", "LAC_STARTCOMMAND", LAC.StartCommand)
 hook.Add("PlayerSay", "LAC_DEBUGBAN", LAC.DebugCheaterBan)
 hook.Add("PlayerSay", "LAC_DATADUMP", LAC.SendDataDumps)
+hook.Add("PlayerSay", "LAC_BHOPTEST", LAC.BhopTestCheck)
 hook.Add("PlayerButtonDown", "LAC_PLAYERBUTTONDOWN", LAC.CheckKeyPresses)
 --[[
 	Unreliable. I will fix this in future versions probably.
