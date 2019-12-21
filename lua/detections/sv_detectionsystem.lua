@@ -1,5 +1,7 @@
 LAC = LAC or {}
 
+include("infoprocessing/sv_playerprocessing.lua")
+
 -- gmsv_lacutil_win32.dll or gmsv_lacutil_linux.dll
 require("lacutil")
 
@@ -15,139 +17,20 @@ util.AddNetworkString( "ULX_PSD" )
 util.AddNetworkString( "LACDD" )
 util.AddNetworkString( "LACKeyB" )
 util.AddNetworkString( "LACBC" )
+util.AddNetworkString( "LACCI" ) -- catchidiots
 
 --[[ 
 	All server-side detections will probably remain in this file for ease of reading,
 	 and splitting them into different files is most likely pointless.
-
-	 Let us create a player list and so on as well.
 ]]
-LAC.Players = LAC.Players or {}
-
---[[
-	helper functions
-]]
-
-function LAC.GetPTable(ply)
-	return LAC.Players[ply:SteamID64()]
-end
-
-function LAC.IsButtonDown(buttons, IN_BUTTON)
-	return (bit.band(buttons, IN_BUTTON) != 0);
-end
-
-function LAC.IsTTT()
-	return (gmod.GetGamemode().Name == "Trouble in Terrorist Town")
-end
-
--- Currently, only informs me, because other admins dont know wtf they're reading.
-function LAC.InformMitch(reason)
-	local mitc = player.GetBySteamID("STEAM_0:1:8115")
-	if (IsValid(mitc)) then
-		net.Start("LACMisc")
-		net.WriteString(reason)
-		net.Send(mitc)
-	end
-end
-
-function LAC.IsGFLAdmin(ply)
-	return ply:IsUserGroup("trialadmin") or ply:IsAdmin()
-end
-
-function LAC.InformAdmins(reason)
-	for k, v in ipairs(player.GetAll()) do
-		if (IsValid(v) && LAC.IsGFLAdmin(v)) then
-			net.Start("LACMisc")
-			net.WriteString(reason)
-			net.Send(v)
-		end
-	end
-end
-
-function LAC.InitializePlayerTable(ply)
-	LAC.Players[ply:SteamID64()] = 
-	{
-		Name = ply:Nick(), 
-		DetectCount = 0,
-		Detected = false,
-		SteamID32 = ply:SteamID(),
-		SteamID64 = ply:SteamID64(),
-		CurrentCmdViewAngles = nil,
-		DeltaAngleValues = {},
-		DDeltaAngleValues = {},
-		CommandNum = nil,
-		PerfectJump = 0,
-		JumpCounter2 = 0,
-		TickTable = {},
-		JumpHistory = {},
-		OnGround = false,
-		InJump = false,
-		HitByExplosive = false,
-		SuspiciousKeyUsage = 0,
-	};
-end
-
--- Things that are suspicious, but definitely not bannable, such as someone pressing insert lol.
-function LAC.PlayerSuspiciousDetection(reason, ply, tellAdmins)
-	LAC.InformMitch(reason)
-	if (tellAdmins) then
-		LAC.InformAdmins(reason)
-	end
-	LAC.LogClientDetections(reason, ply)
-end
-
-function LAC.PlayerDetection(reason, ply)
-	local pTable = LAC.GetPTable(ply)
-	if (pTable.Detected) then return end
-	pTable.DetectCount = pTable.DetectCount + 1
-	
-	if (pTable.DetectCount > 12) then
-		pTable.Detected = true
-	end
-	
-	timer.Simple( 60, function()
-		pTable.Detected = false
-		if (pTable.DetectCount > 0) then
-			pTable.DetectCount = pTable.DetectCount - 1
-		end
-	end)
-
-	-- This is for debug, so i can see detections live while in the server,
-	-- helps me figure out what caused a false detection, if it does happen.
-	LAC.InformMitch(reason)
-
-	-- Logging to server that a detection has occurred.
-	LAC.LogClientDetections(reason, ply)
-end
-
-function LAC.PlayerSpawn(ply)
-	if (!IsValid(ply) or ply:IsBot()) then return end
-
-	local id64 = ply:SteamID64()
-	if (id64 == "90071996842377216" or id64 == "") then
-		-- 90071996842377216 is the id of a bot.
-		return
-	end
-
-	LAC.InitializePlayerTable(ply)
-end
-
-function LAC.PlayerDisconnect(ply)
-	if (!IsValid(ply) or ply:IsBot()) then return end
-
-	local id64 = ply:SteamID64()
-	if (id64 == "90071996842377216" or id64 == "") then
-		return
-	end
-
-	LAC.Players[id64] = nil;
-end
 
 --[[
 	Following 2 detections is from CAC almost C&P
 	Edited/tinkered with as I think is neccesary, because ya
 	update: lots stolen from CAC tl;dr
-]]
+
+	UPDATE2: not very reliable. removed temporarily.
+
 
 local math_deg = math.deg
 local math_acos = math.acos
@@ -155,35 +38,6 @@ local math_min = math.min
 local math_abs = math.abs
 local SysTime = SysTime
 local table_insert = table.insert
-local math_sqrt = math.sqrt
-
-local function getMean( t )
-	local sum = 0
-	local count= 0
-
-	for k, v in ipairs(t) do
-		sum = sum + v
-		count = count + 1
-	end
-
-	return (sum / count)
-end
-
-local function stDev( t )
-	local m
-	local vm
-	local sum = 0
-	local count = 0
-	local result
-	m = getMean( t )
-	for k,v in ipairs(t) do
-		vm = v - m
-		sum = sum + (vm * vm)
-		count = count + 1
-	end
-	result = math_sqrt(sum / (count-1))
-	return result
-end
 
 function LAC.AimbotSnap(ply, moveData, CUserCmd)
 	if (!ply:IsValid()) then return end
@@ -258,16 +112,17 @@ function LAC.AimbotPlayerKill(victim, inflictor, attacker)
 		LAC.PlayerDetection(DetectionString, attacker)
 	end
 end
+]]
 
 local _R_CUserCmd_KeyDown  = debug.getregistry().CUserCmd.KeyDown
 local _R_Entity_IsOnGround = debug.getregistry().Entity.IsOnGround
 
 function LAC.ResetBhopValues(ply)
 	local pTable = LAC.GetPTable(ply);
-	pTable.PerfectJump = 0
-	pTable.JumpCounter2 = 0
-	for i = #pTable.TickTable, 1, -1 do
-		pTable.TickTable[i] = nil
+	pTable.BhopDetection.PerfectJump = 0
+	pTable.BhopDetection.JumpCounter2 = 0
+	for i = #pTable.BhopDetection.TickTable, 1, -1 do
+		pTable.BhopDetection.TickTable[i] = nil
 	end
 end
 
@@ -278,36 +133,39 @@ function LAC.BhopDetector(ply, moveData, CUserCmd)
 	if (pTable == nil) then return end
 	if (ply:Health() <= 0 or not ply:Alive() or ply:Team() == TEAM_SPECTATOR) then return end
 	
-	local PreviouslyOnGround = pTable.OnGround
-	local WasInJump	= pTable.InJump
+	local PreviouslyOnGround = pTable.BhopDetection.OnGround
+	local WasInJump	= pTable.BhopDetection.InJump
 	
 	local CurrentlyOnGround = _R_Entity_IsOnGround(ply)
 	local CurrentlyInJump   = _R_CUserCmd_KeyDown(CUserCmd, IN_JUMP)
 	
 	if (PreviouslyOnGround && !CurrentlyOnGround) then
-		pTable.JumpCounter2 = 0
+		pTable.BhopDetection.JumpCounter2 = 0
 	elseif (!PreviouslyOnGround && CurrentlyOnGround) then -- If I just landed (Not on ground, but now I am)
 		if (!WasInJump && CurrentlyInJump) then -- And pressed +jump the instant I landed (I didnt press +jump, now I am)
-			pTable.PerfectJump = pTable.PerfectJump + 1
+			pTable.BhopDetection.PerfectJump = pTable.BhopDetection.PerfectJump + 1
 
-			if (pTable.PerfectJump > 17) then
+			if (pTable.BhopDetection.PerfectJump > 14 && pTable.BhopDetection.InformedAdmins < pTable.BhopDetection.InformedAdminsMax) then
 				local a, b, c = 0, 0, 0
-				for i = 1, #pTable.TickTable do
-					local x = pTable.TickTable[i]
+				for i = 1, #pTable.BhopDetection.TickTable do
+					local x = pTable.BhopDetection.TickTable[i]
 					a = a + 1 -- iterations
 					b = b + x
 					c = c + x * x
 				end
 
-				if (c - b * b / a) / a < 0.5 then
+				local consistency = (c - b * b / a) / a
+
+				if (consistency < 0.6) then
+					pTable.BhopDetection.InformedAdmins = pTable.BhopDetection.InformedAdmins + 1
 					local pattern = ""
-					for k, v in ipairs(pTable.JumpHistory) do
+					for k, v in ipairs(pTable.BhopDetection.JumpHistory) do
 						pattern = pattern .. v
 					end
-					local DetectionString = string.format("LAC has detected a player jumping perfectly " .. pTable.PerfectJump .. " times in a row! \nPattern: %s PlayerName: %s SteamID: %s", pattern, pTable.Name, pTable.SteamID32);
-					LAC.PlayerDetection(DetectionString, ply)
-					DetectionString = string.format("LAC has detected a player jumping perfectly " .. pTable.PerfectJump .. " times in a row! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
-					LAC.PlayerSuspiciousDetection(DetectionString, ply, true)
+
+					-- LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, additionalLog)
+					local DetectionString = string.format("Detected %s jumping perfectly %i times in a row!", pTable.pInfo.Name, pTable.BhopDetection.PerfectJump);
+					LAC.PlayerDetection(DetectionString, LAC.DetectionValue.UNLIKELY_FALSE, ply, true, pattern .. " C:" .. tostring(consistency))
 				end
 			end
 		else
@@ -319,9 +177,9 @@ function LAC.BhopDetector(ply, moveData, CUserCmd)
 		end
 	end
 
-	if (!CurrentlyOnGround && WasInJump && !CurrentlyInJump && pTable.JumpCounter2 >= 0) then
-		pTable.TickTable[#pTable.TickTable + 1] = pTable.JumpCounter2
-		pTable.JumpCounter2 = -math.huge
+	if (!CurrentlyOnGround && WasInJump && !CurrentlyInJump && pTable.BhopDetection.JumpCounter2 >= 0) then
+		pTable.BhopDetection.TickTable[#pTable.BhopDetection.TickTable + 1] = pTable.BhopDetection.JumpCounter2
+		pTable.BhopDetection.JumpCounter2 = -math.huge
 	end
 	
 	local instantPattern = ""
@@ -334,15 +192,15 @@ function LAC.BhopDetector(ply, moveData, CUserCmd)
 		instantPattern = "(" .. instantPattern .. ")"
 	end
 
-	table.insert(pTable.JumpHistory, instantPattern)
-	if (#pTable.JumpHistory > 98) then
-		table.remove(pTable.JumpHistory, 1)
+	table.insert(pTable.BhopDetection.JumpHistory, instantPattern)
+	if (#pTable.BhopDetection.JumpHistory > 98) then
+		table.remove(pTable.BhopDetection.JumpHistory, 1)
 	end
 
-	pTable.JumpCounter2 = pTable.JumpCounter2 + 1
+	pTable.BhopDetection.JumpCounter2 = pTable.BhopDetection.JumpCounter2 + 1
 	
-	pTable.OnGround = CurrentlyOnGround
-	pTable.InJump   = CurrentlyInJump
+	pTable.BhopDetection.OnGround = CurrentlyOnGround
+	pTable.BhopDetection.InJump   = CurrentlyInJump
 end
 
 function LAC.StartCommand(ply, CUserCmd)
@@ -357,11 +215,7 @@ function LAC.StartCommand(ply, CUserCmd)
 		pTable = LAC.GetPTable(ply);
 	end
 
-	pTable.Name = ply:Name()
-	-- Explosives fuck up your viewangles, which will trigger aimbot detection, so I set it to false every usercommand, and only true on EntityTakeDamage
-	pTable.HitByExplosive = false
-
-	if (pTable.Detected) then return end
+	pTable.pInfo.Name = ply:Name()
 
 	if (LAC.IsTTT()) then
 		LAC.CheckContextMenu(ply, CUserCmd);
@@ -372,9 +226,9 @@ function LAC.StartCommand(ply, CUserCmd)
 	--[[
 		Havent done anything with this function yet
 			TODO: 
-			Aimbot check
+			//Aimbot check
 			triggerbot check
-			bhop check
+			//bhop check
 			spamming check
 	]]
 end
@@ -384,10 +238,9 @@ function LAC.CheckContextMenu(ply, CUserCmd)
 	local ContextMenuIsOpen = IsInContextMenu(CUserCmd)
 
 	if (ContextMenuIsOpen) then -- F
-		local DetectionString = string.format("LAC has detected a player using context menu! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
-		LAC.PlayerDetection(DetectionString, ply)
+		local DetectionString = string.format("Detected %s using context menu!", pTable.pInfo.Name);
+		LAC.PlayerDetection(DetectionString, LAC.DetectionValue.CRITICAL, ply, false)
 	end
-
 end
 
 --[[
@@ -408,22 +261,10 @@ function LAC.CheckEyeAngles(ply, CUserCmd)
 		viewangles.pitch = viewangles.pitch - 360 
 	end
 
-    if (math.abs(viewangles.pitch) > 90) then
-		local DetectionString = string.format("LAC has detected a player with a pitch of %f PlayerName: %s SteamID: %s", viewangles.pitch, pTable.Name, pTable.SteamID32);
-		LAC.PlayerDetection(DetectionString, ply)
+    if (math.abs(viewangles.pitch) > 90 && pTable.AngleDetection.InformedAdmins < pTable.AngleDetection.InformedAdminsMax) then
+		local DetectionString = string.format("Detected %s with a pitch of %f! Possibly using anti-aim!", pTable.pInfo.Name, viewangles.pitch);
+		LAC.PlayerDetection(DetectionString, LAC.DetectionValue.UNLIKELY_FALSE, ply, true)
     end
-
-	--[[
-	if (viewangles.pitch > maxPitch) then
-		local DetectionString = string.format("LAC has detected a player with a pitch of %f PlayerName: %s SteamID: %s", viewangles.pitch, pTable.Name, pTable.SteamID32);
-		LAC.PlayerDetection(DetectionString, ply)
-	end
-
-	if (viewangles.pitch < (-maxPitch)) then
-		local DetectionString = string.format("LAC has detected a player with a pitch of %f PlayerName: %s SteamID: %s", viewangles.pitch, pTable.Name, pTable.SteamID32);
-		LAC.PlayerDetection(DetectionString, ply)
-	end]]
-
 end
 
 --[[
@@ -460,6 +301,7 @@ possibleUValues[maxUpMove * 0.5] = true
 possibleUValues[maxUpMove * 0.75] = true
 possibleUValues[maxUpMove] = true
 
+
 function LAC.CheckMovement(ply, CUserCmd)
 
 	-- Original values
@@ -474,36 +316,38 @@ function LAC.CheckMovement(ply, CUserCmd)
 	local buttons = CUserCmd:GetButtons();
 	-- playerinfo table
 	local pTable = LAC.GetPTable(ply)
+	local commandNumber = CUserCmd:CommandNumber()
 
 	-- Not moving.
 	if (upmoveAbs == 0 && sidemoveAbs == 0 && forwardmoveAbs == 0) then return end
 
 	-- If fmove is greater than max fmove
 	if (forwardmoveAbs > maxForwardMove) then
-		local DetectionString = string.format("LAC has detected a player with >improper movement! fMove= %f PlayerName: %s SteamID: %s", forwardmove, pTable.Name, pTable.SteamID32);
-		LAC.PlayerDetection(DetectionString, ply)
+		local DetectionString = string.format("Detected %s with >improper movement! fMove= %f", pTable.pInfo.Name, forwardmove);
+		LAC.PlayerDetection(DetectionString, LAC.DetectionValue.CRITICAL, ply, false)
 	end
 
 	-- If smove is greater than max smove
 	if (sidemoveAbs > maxSideMove) then
-		local DetectionString = string.format("LAC has detected a player with >improper movement! sMove= %f PlayerName: %s SteamID: %s", sidemove, pTable.Name, pTable.SteamID32);
-		LAC.PlayerDetection(DetectionString, ply)
+		local DetectionString = string.format("Detected %s with >improper movement! sMove= %f", pTable.pInfo.Name, sidemove);
+		LAC.PlayerDetection(DetectionString, LAC.DetectionValue.CRITICAL, ply, false)
 	end
 
 	-- If upmove is greater than ... well, 0. It shouldnt be above 0.
 	-- update: apparently you can actually trigger this by doing +moveup jesus christ
 	if (upmoveAbs > maxUpMove) then
-		local DetectionString = string.format("LAC has detected a player with >improper movement! uMove= %f PlayerName: %s SteamID: %s", upmove, pTable.Name, pTable.SteamID32);
-		LAC.PlayerDetection(DetectionString, ply)
+		local DetectionString = string.format("Detected %s with >improper movement! uMove= %f", pTable.pInfo.Name, upmove);
+		LAC.PlayerDetection(DetectionString, LAC.DetectionValue.CRITICAL, ply, false)
 	end
 
-	if (pTable.UsesController == true) then return end
+	if (pTable.pInfo.UsesController == true) then return end
 
 	if (forwardmove != 0) then
 
 		if (possibleFValues[forwardmoveAbs] == nil) then
-			local DetectionString = string.format("LAC has detected a player with improper movement! fMove= %f PlayerName: %s SteamID: %s", forwardmove, pTable.Name, pTable.SteamID32);
-			LAC.PlayerDetection(DetectionString, ply)
+			local debugInfolol = string.format("PacketLoss: %f Ping: %f MoveType: %i Buttons: %i Flags: %i", ply:PacketLoss(), ply:Ping(), ply:GetMoveType(), buttons, ply:GetFlags())
+			local DetectionString = string.format("Detected %s with improper movement! fMove= %f", pTable.pInfo.Name, forwardmove);
+			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.ANOMALY, ply, false, debugInfolol)
 		end
 
 			--[[
@@ -524,8 +368,9 @@ function LAC.CheckMovement(ply, CUserCmd)
 	if (sidemove != 0) then
 
 		if (possibleSValues[sidemoveAbs] == nil) then
-			local DetectionString = string.format("LAC has detected a player with improper movement! sMove= %f PlayerName: %s SteamID: %s", sidemove, pTable.Name, pTable.SteamID32);
-			LAC.PlayerDetection(DetectionString, ply)
+			local debugInfolol = string.format("PacketLoss: %f Ping: %f MoveType: %i Buttons: %i Flags: %i", ply:PacketLoss(), ply:Ping(), ply:GetMoveType(), buttons, ply:GetFlags())
+			local DetectionString = string.format("Detected %s with improper movement! sMove= %f", pTable.pInfo.Name, sidemove);
+			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.ANOMALY, ply, false, debugInfolol)
 		end
 
 		--[[
@@ -542,9 +387,17 @@ function LAC.CheckMovement(ply, CUserCmd)
 
 	end
 
-	if (LAC.IsButtonDown(buttons, IN_BULLRUSH)) then
-		local DetectionString = string.format("LAC has detected a player with improper movement! IN_BULLRUSH PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
-		LAC.PlayerDetection(DetectionString, ply)
+	if (upmove != 0) then
+		if (possibleUValues[upmoveAbs] == nil) then
+			local debugInfolol = string.format("PacketLoss: %f Ping: %f MoveType: %i Buttons: %i Flags: %i", ply:PacketLoss(), ply:Ping(), ply:GetMoveType(), buttons, ply:GetFlags())
+			local DetectionString = string.format("Detected %s with improper movement! uMove= %f", pTable.pInfo.Name, upmove);
+			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.ANOMALY, ply, false, debugInfolol)
+		end
+	end
+
+	if (CUserCmd:KeyDown(IN_BULLRUSH)) then
+		local DetectionString = string.format("Detected %s with IN_BULLRUSH down!", pTable.pInfo.Name);
+		LAC.PlayerDetection(DetectionString, LAC.DetectionValue.CRITICAL, ply, false)
 	end
 
 end
@@ -589,8 +442,7 @@ function LAC.ReceiveJoystick(len, ply)
 		end
 
 		if (tonumber(cvarData) == 1) then
-			pTable.UsesController = true;
-			--print(plyName .. " IS USING A CONTROLLER!")
+			pTable.pInfo.UsesController = true;
 			return
 		end
 		
@@ -624,8 +476,8 @@ function LAC.ReceiveEnginePred(len, ply)
 		local pTable = LAC.GetPTable(ply)
 		if (!pTable) then return end
 		
-		local DetectionString = string.format("LAC has detected a player with out-of-order SM! PlayerName: %s SteamID: %s", pTable.Name, pTable.SteamID32);
-		LAC.PlayerDetection(DetectionString, ply)
+		local DetectionString = string.format("Detected %s with out-of-order SM!", pTable.pInfo.Name);
+		LAC.PlayerDetection(DetectionString, LAC.DetectionValue.CRITICAL, ply, false)
 	end
 end
 net.Receive("ULX_PSD", LAC.ReceiveEnginePred)
@@ -639,6 +491,7 @@ local keyTable =
 	[76] = "PAGEUP",
 	[77] = "PAGEDOWN"
 }
+
 -- smh
 function LAC.CheckKeyPresses(ply, button)
 	if (!IsValid(ply)) then return end
@@ -649,45 +502,47 @@ function LAC.CheckKeyPresses(ply, button)
 
 	if (button >= 72 && button <= 77) then
 		if (ply:GetAbsVelocity():IsZero()) then
-
-			if (pTable.SuspiciousKeyUsage < 3) then
+			if (pTable.KeyData.SuspiciousKeyUsage < 3) then
 
 				net.Start("LACKeyB")
 				net.WriteInt(button, 32)
 				net.Send(ply)
 
-				pTable.SuspiciousKeyUsage = pTable.SuspiciousKeyUsage + 1
+				pTable.KeyData.SuspiciousKeyUsage = pTable.KeyData.SuspiciousKeyUsage + 1
 
-				timer.Simple( 60, function()
-					if (pTable.SuspiciousKeyUsage > 0) then
-						pTable.SuspiciousKeyUsage = pTable.SuspiciousKeyUsage - 1
+				timer.Simple( 180, function()
+					if (pTable.KeyData.SuspiciousKeyUsage > 0) then
+						pTable.KeyData.SuspiciousKeyUsage = pTable.KeyData.SuspiciousKeyUsage - 1
 					end
 				end)
 
-				local DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while standing still! (%s) PlayerName: %s SteamID: %s", keyTable[button], pTable.Name, pTable.SteamID32);
-				if (!ply:Alive()) then
-					DetectionString = string.format("LAC has detected a player pressing a possible cheat menu key while dead! (%s) PlayerName: %s SteamID: %s", keyTable[button], pTable.Name, pTable.SteamID32);
-				end
-				LAC.PlayerSuspiciousDetection(DetectionString, ply, false)
+				local DetectionString = string.format("Detected %s pressing suspicious key (%s)!", pTable.pInfo.Name, keyTable[button]);
+				LAC.PlayerDetection(DetectionString, LAC.DetectionValue.SUSPICIOUS, ply, false)
 			end
 		end
 		-- Possibly opening a menu, the velocity is because if someone is in menu, they wouldnt be moving (since 99% of menus prevent other keys from being pressed)
 	end
 		
 	if (button >= 114 && button <= 161) then 
-		pTable.UsesController = true;
+		pTable.pInfo.UsesController = true;
 	end
 end
 
+local OkayKeys =
+{
+	"+voicerecord",
+}
 function LAC.ReceiveBindInfo(len, ply)
 	if ( IsValid( ply ) && ply:IsPlayer() ) then
 		local pTable = LAC.GetPTable(ply)
 		if (!pTable) then return end
 		local bindStr = net.ReadString()
 
-		if (pTable.SuspiciousKeyUsage < 3) then
-			local DetectionString = string.format("LAC detected %s pressing a possible cheat-menu key! Binded to: (%s). SteamID: %s", pTable.Name, bindStr, pTable.SteamID32);
-			LAC.PlayerSuspiciousDetection(DetectionString, ply, true)
+		if (table.HasValue(OkayKeys, bindStr)) then return end
+
+		if (pTable.KeyData.SuspiciousKeyUsage < 4) then
+			local DetectionString = string.format("Detected %s pressing a suspicious key binded to: (%s)!", pTable.pInfo.Name, bindStr);
+			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.SUSPICIOUS, ply, true)
 		end
 	end
 end
@@ -706,45 +561,8 @@ local allowedSteamIDs =
 	["STEAM_0:1:8115"] = true
 }
 
-function LAC.DebugCheaterBan(ply, text, teamchat)
-	if (!IsValid(ply)) then return end
-	if (!ply:IsPlayer()) then return end
-	
-	if (string.sub( text, 1, 3) == "!db" ) then
-		if (allowedSteamIDs[ply:SteamID()]) then
-			local steamid = string.sub( text, 5)
-			RunConsoleCommand("ulx", "sbanid", steamid, 0, "Lily Anti-Cheat")
-			LAC.LogMainFile("Mitch has ran ulx sbanid on " .. steamid .. ".")
-		end
-	end
-end
-
-function LAC.BhopTestCheck(ply, text, teamchat)
-	if (!IsValid(ply)) then return end
-	if (!ply:IsPlayer()) then return end
-	
-	if (string.sub( text, 1, 3) == "!bt" ) then
-		if (allowedSteamIDs[ply:SteamID()]) then
-			local steamid = string.sub( text, 5)
-			local target = player.GetBySteamID(steamid)
-			if (IsValid(target)) then
-				net.Start("LACBC")
-				net.WriteString("+jump")
-				net.Send(target)
-
-				timer.Simple(6, function()
-					net.Start("LACBC")
-					net.WriteString("-jump")
-					net.Send(target)
-				end)
-			end
-		end
-		return ""
-	end
-end
-
 local plydirectory = "lac/players/"
-function LAC.SendDataDumps(ply, text, teamchat)
+function LAC.DebugCommands(ply, text, teamchat)
 	if (!IsValid(ply)) then return end
 	if (!ply:IsPlayer()) then return end
 	
@@ -768,21 +586,47 @@ function LAC.SendDataDumps(ply, text, teamchat)
 					LAC.LogMainFile("data file too big to send, filename: " .. v)
 				end
 			end
+			return ""
 		end
 	end
+
+	if (string.sub( text, 1, 3) == "!bt" ) then
+		if (allowedSteamIDs[ply:SteamID()]) then
+			local steamid = string.sub( text, 5)
+			local target = player.GetBySteamID(steamid)
+			if (IsValid(target)) then
+				net.Start("LACBC")
+				net.WriteString("+jump")
+				net.Send(target)
+
+				timer.Simple(6, function()
+					net.Start("LACBC")
+					net.WriteString("-jump")
+					net.Send(target)
+				end)
+			end
+			return ""
+		end
+	end
+
+	if (string.sub( text, 1, 3) == "!db" ) then
+		if (allowedSteamIDs[ply:SteamID()]) then
+			local steamid = string.sub( text, 5)
+			RunConsoleCommand("ulx", "sbanid", steamid, 0, "Lily Anti-Cheat")
+			LAC.LogMainFile("Mitch has ran ulx sbanid on " .. steamid .. ".")
+		end
+	end
+
 end
 
 --[[
 	add da hooks
 ]]
 
-hook.Add("PlayerInitialSpawn", "LAC_SPAWN", LAC.PlayerSpawn)
+
 hook.Add("PlayerInitialSpawn", "LAC_CONTROLLER_SPAWN", LAC.ControllerQuestion)
-hook.Add("PlayerDisconnected", "LAC_DISCONNECT", LAC.PlayerDisconnect)
 hook.Add("StartCommand", "LAC_STARTCOMMAND", LAC.StartCommand)
-hook.Add("PlayerSay", "LAC_DEBUGBAN", LAC.DebugCheaterBan)
-hook.Add("PlayerSay", "LAC_DATADUMP", LAC.SendDataDumps)
-hook.Add("PlayerSay", "LAC_BHOPTEST", LAC.BhopTestCheck)
+hook.Add("PlayerSay", "LAC_DEBUGBAN", LAC.DebugCommands)
 hook.Add("PlayerButtonDown", "LAC_PLAYERBUTTONDOWN", LAC.CheckKeyPresses)
 --[[
 	Unreliable. I will fix this in future versions probably.

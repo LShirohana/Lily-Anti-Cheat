@@ -47,6 +47,11 @@ LAC.include("options/sv_options.lua")
 LAC.InitializeOptions()
 -- Log System
 LAC.include("eventlog/sv_eventlog.lua")
+-- Message/Informing System
+LAC.include("inform/sv_inform.lua")
+-- Player Processing/Punishiment
+LAC.include("infoprocessing/sv_playerprocessing.lua")
+LAC.include("infoprocessing/sv_punishmentsystem.lua")
 -- Detection System (and sub-systems)
 LAC.include("detections/sv_detectionsystem.lua")
 

@@ -34,8 +34,8 @@ function LAC.LogServerError(eventString)
 	LAC.LogEvent(eventString, LAC.GetDate("%d-%m-%Y-log"), LAC.ServerErrorsDirectoryName)
 end
 
-function LAC.LogClientError(eventString, id)
-	local steamid64 = player:SteamID64()
+function LAC.LogClientError(eventString, ply)
+	local steamid64 = ply:SteamID64()
 	LAC.LogEvent(eventString, steamid64, LAC.ClientErrorDirectoryName)
 end
 
