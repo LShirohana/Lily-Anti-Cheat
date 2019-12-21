@@ -41,7 +41,7 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 		local MessageToAdmins = {LAC.Black, "[", LAC.Red, "LAC", LAC.Black, "] ", LAC.White, "FULLD: " .. reasonDetected, LAC.Black, " SteamID: ", LAC.White, pTable.pInfo.SteamID32}
 		LAC.InformMitch(MessageToAdmins)
 		plsnoSpam = true
-		timer.Simple(60, function()
+		timer.Simple(30, function()
 			plsnoSpam = false
 		end)
 		return 
