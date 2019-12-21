@@ -72,7 +72,7 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 	LAC.InformMitch(MessageToAdmins)
 
 	-- Logging to server that a detection has occurred.
-	LAC.LogClientDetections(reasonDetected .. " " .. additionalLog, ply)
+	LAC.LogClientDetections(reasonDetected .. " " .. pTable.pInfo.SteamID32 .. " " .. additionalLog, ply)
 end
 
 function LAC.ReduceDamageOfCheaters(target, dmginfo)
