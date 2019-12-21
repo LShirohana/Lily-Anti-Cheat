@@ -22,13 +22,6 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 	if (pTable == nil) then return end
 	if (additionalLog == nil) then additionalLog = "" end
 
-    -- Player already marked for ban. F
-	if (pTable.DetectionInfo.Detected) then
-		local MessageToAdmins = {LAC.Black, "[", LAC.Red, "LAC", LAC.Black, "] ", LAC.White, "FULLD: " .. reasonDetected, LAC.Black, " SteamID: ", LAC.White, pTable.pInfo.SteamID32}
-		LAC.InformMitch(MessageToAdmins)
-		return 
-	end
-
 	if (detectValue >= LAC.DetectionValue.CRITICAL) then
 		pTable.DetectionInfo.Detected = true
 		pTable.DetectionInfo.ConfidentDetected = true
@@ -40,6 +33,13 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 		if (ulx && isfunction(ulx.sbanid)) then
 			RunConsoleCommand("ulx", "sbanid", pTable.pInfo.SteamID32, 0, "Lily Anti-Cheat")
 		end
+	end
+
+	 -- Player already marked for ban. F
+	if (pTable.DetectionInfo.Detected) then
+		local MessageToAdmins = {LAC.Black, "[", LAC.Red, "LAC", LAC.Black, "] ", LAC.White, "FULLD: " .. reasonDetected, LAC.Black, " SteamID: ", LAC.White, pTable.pInfo.SteamID32}
+		LAC.InformMitch(MessageToAdmins)
+		return 
 	end
 
 	if (detectValue == LAC.DetectionValue.UNLIKELY_FALSE) then
