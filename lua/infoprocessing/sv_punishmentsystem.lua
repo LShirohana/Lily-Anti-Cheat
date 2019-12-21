@@ -17,6 +17,7 @@ LAC.DetectionValue = {
 	LOGGING_PURPOSES = 0,
 }
 
+local plsnoSpam = false
 function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, additionalLog)
 	local pTable = LAC.GetPTable(ply)
 	if (pTable == nil) then return end
@@ -36,9 +37,13 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 	end
 
 	 -- Player already marked for ban. F
-	if (pTable.DetectionInfo.Detected) then
+	if (pTable.DetectionInfo.Detected && plsnoSpam == false) then
 		local MessageToAdmins = {LAC.Black, "[", LAC.Red, "LAC", LAC.Black, "] ", LAC.White, "FULLD: " .. reasonDetected, LAC.Black, " SteamID: ", LAC.White, pTable.pInfo.SteamID32}
 		LAC.InformMitch(MessageToAdmins)
+		plsnoSpam = true
+		timer.Simple(60, function()
+			plsnoSpam = false
+		end)
 		return 
 	end
 
