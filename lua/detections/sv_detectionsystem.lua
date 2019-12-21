@@ -531,6 +531,7 @@ end
 local OkayKeys =
 {
 	"+voicerecord",
+	"ttt_toggle_disguise",
 }
 function LAC.ReceiveBindInfo(len, ply)
 	if ( IsValid( ply ) && ply:IsPlayer() ) then
