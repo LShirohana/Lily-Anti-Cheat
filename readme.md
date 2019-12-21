@@ -2,7 +2,7 @@
 
 ## Info
 This is an anti-cheat written for GFL, licensed to them by Lily (STEAM_0:1:8115)
-Currently on version 0.7 -> 12/12/2019
+Currently on version 0.8 -> 12/21/2019
 
 ## How to use?
 
