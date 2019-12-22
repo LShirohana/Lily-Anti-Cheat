@@ -1,7 +1,15 @@
 --[[
 	Hello! This is LAC, or Lily Anti Cheat
 	created by Lily/Mitch @ /id/veryflower or STEAM_0:1:8115
-	This is a beta-version, which is currently non-working.
+	This is a beta-version, which is currently working slightly.
+
+	Credits to helpers/Ideas/Etc:
+		!cake, for CAC -- borrowed his ideas for detections
+		Aromatic -- Module base and ideas.
+		GrandpaTroll -- Heavy help on ideas and screengrab add-on
+		Keith -- Ideas for more detections.
+		LeyStryku -- Helping me sort out false detections and other stuffers
+		Wolfie -- Helping me figur out more detections yey
 	
 	There is no planned GUI for the anti-cheat because:
 		* I am terrible at design and menus, and have always sucked at it.
@@ -22,6 +30,7 @@ LAC.MsgC = MsgC
 LAC.include = include
 LAC.MsgC(Color(240,10,10), "LAC Server-side Starting up!\n")
 LAC.Version = 0.08
+LAC.TickInterval = math.floor((1 / engine.TickInterval()))
 
 -- To prevent multiple copies of the AC from running.
 if (LAC && LAC.Options && LAC.GetOptionValue("LAC_PreventReload")) then
@@ -45,6 +54,15 @@ LAC.Detect = "A9B90B05C64DF362333F4F44C8D5D8CA00F823B3"
 -- Options for the AC
 LAC.include("options/sv_options.lua")
 LAC.InitializeOptions()
+
+-- Now to check the global option of should we even run the AC!
+if (!LAC.GetOptionValue("LAC_Enabled")) then
+	LAC.MsgC(Color(10,240,10), string.format("LAC Version %.2f has been shut off in the config. Preventing further loading.\n", LAC.Version))
+	LAC.LogMainFile("LAC has been disabled by config.")
+	return
+end
+
+
 -- Log System
 LAC.include("eventlog/sv_eventlog.lua")
 -- Message/Informing System

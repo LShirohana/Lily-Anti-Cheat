@@ -14,9 +14,9 @@ LAC.Options = LAC.Options or {} -- dont wanna reset our options accidentally.
 --]]
 
 function LAC.InitializeOptions()
-	LAC.SetOptionValue("LAC_Enabled", false, "Global Switch to turn the AC on and off.")
+	LAC.SetOptionValue("LAC_Enabled", true, "Global Switch to turn the AC on and off.")
 	LAC.SetOptionValue("LAC_BanSystem", "default", "The type of ban system to use. Leave to default unless you'd like to override it.")
-	LAC.SetOptionValue("LAC_DetectionSystem", false, "Turn on the detection system.")
+	LAC.SetOptionValue("LAC_DetectionSystem", true, "Turn on the detection system.")
 	LAC.SetOptionValue("LAC_PreventReload", true, "Prevent the AC from being reloaded due to lua-refresh.")
 	
 	LAC.SetBanSystem() -- This sets the default BanSystem. Keep @ the end.

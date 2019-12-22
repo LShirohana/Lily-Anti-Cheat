@@ -2,8 +2,7 @@ local LAC = {}
 
 LAC.shared_files_to_include =
 			{
-			"detections/modules/cl_cvars.lua",
-			"detections/modules/cl_spec.lua"
+			"detections/modules/cl_lac.lua",
 			}
 
 LAC.include = include

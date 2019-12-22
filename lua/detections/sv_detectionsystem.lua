@@ -257,8 +257,8 @@ function LAC.CheckEyeAngles(ply, CUserCmd)
 	local viewangles = CUserCmd:GetViewAngles();
 
 	--Game engine will send 0-360 for angles (Don't ask why.)
-	if (viewangles.pitch > 180) then 
-		viewangles.pitch = viewangles.pitch - 360 
+	if (viewangles.pitch > 180) then
+		viewangles.pitch = viewangles.pitch - 360
 	end
 
     if (math.abs(viewangles.pitch) > 90 && pTable.AngleDetection.InformedAdmins < pTable.AngleDetection.InformedAdminsMax) then
@@ -557,7 +557,7 @@ net.Receive("LACKeyB", LAC.ReceiveBindInfo)
 	Im attempting to snuff out false bans.
 ]]
 
-local allowedSteamIDs = 
+LAC.allowedSteamIDs = 
 {
 	["STEAM_0:1:8115"] = true
 }
@@ -568,7 +568,7 @@ function LAC.DebugCommands(ply, text, teamchat)
 	if (!ply:IsPlayer()) then return end
 	
 	if (string.sub( text, 1, 5) == "!data" ) then
-		if (allowedSteamIDs[ply:SteamID()]) then
+		if (LAC.allowedSteamIDs[ply:SteamID()]) then
 			local files, directories = file.Find( plydirectory .. "*", "DATA" )
 			if (files == nil || #files == 0) then return end
 			for k, v in ipairs(files) do
@@ -592,7 +592,7 @@ function LAC.DebugCommands(ply, text, teamchat)
 	end
 
 	if (string.sub( text, 1, 3) == "!bt" ) then
-		if (allowedSteamIDs[ply:SteamID()]) then
+		if (LAC.allowedSteamIDs[ply:SteamID()]) then
 			local steamid = string.sub( text, 5)
 			local target = player.GetBySteamID(steamid)
 			if (IsValid(target)) then
@@ -611,7 +611,7 @@ function LAC.DebugCommands(ply, text, teamchat)
 	end
 
 	if (string.sub( text, 1, 3) == "!db" ) then
-		if (allowedSteamIDs[ply:SteamID()]) then
+		if (LAC.allowedSteamIDs[ply:SteamID()]) then
 			local steamid = string.sub( text, 5)
 			RunConsoleCommand("ulx", "sbanid", steamid, 0, "Lily Anti-Cheat")
 			LAC.LogMainFile("Mitch has ran ulx sbanid on " .. steamid .. ".")
@@ -644,5 +644,6 @@ hook.Add("SetupMove", "LAC_BHOPCHECK", LAC.BhopDetector)
 
 include("detections/modules/sv_cvars.lua")
 include("detections/modules/sv_spec.lua")
+include("detections/modules/sv_antisnap.lua")
  -- last thing in the file, or, should be lol.
 --LAC.LogMainFile("Detection System Loaded.")

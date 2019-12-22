@@ -17,11 +17,18 @@ LAC.DetectionValue = {
 	LOGGING_PURPOSES = 0,
 }
 
-local plsnoSpam = false
 function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, additionalLog)
+	--if (!LAC.GetOptionValue("LAC_DetectionSystem")) then return end -- if you want this option. idk
 	local pTable = LAC.GetPTable(ply)
 	if (pTable == nil) then return end
 	if (additionalLog == nil) then additionalLog = "" end
+
+	 -- Player already marked for ban. F
+	 if (pTable.DetectionInfo.Detected) then
+		local MessageToAdmins = {LAC.Black, "[", LAC.Red, "LAC", LAC.Black, "] ", LAC.White, "FULLD: " .. reasonDetected, LAC.Black, " SteamID: ", LAC.White, pTable.pInfo.SteamID32}
+		LAC.InformMitch(MessageToAdmins, false)
+		return
+	end
 
 	if (detectValue >= LAC.DetectionValue.CRITICAL) then
 		pTable.DetectionInfo.Detected = true
@@ -33,18 +40,9 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 		pTable.DetectionInfo.ConfidentDetected = true
 		if (ulx && isfunction(ulx.sbanid)) then
 			RunConsoleCommand("ulx", "sbanid", pTable.pInfo.SteamID32, 0, "Lily Anti-Cheat")
+			LAC.LogClientDetections(reasonDetected .. " SteamID: " .. pTable.pInfo.SteamID32 .. " " .. additionalLog, ply)
+			return
 		end
-	end
-
-	 -- Player already marked for ban. F
-	if (pTable.DetectionInfo.Detected && plsnoSpam == false) then
-		local MessageToAdmins = {LAC.Black, "[", LAC.Red, "LAC", LAC.Black, "] ", LAC.White, "FULLD: " .. reasonDetected, LAC.Black, " SteamID: ", LAC.White, pTable.pInfo.SteamID32}
-		LAC.InformMitch(MessageToAdmins)
-		plsnoSpam = true
-		timer.Simple(30, function()
-			plsnoSpam = false
-		end)
-		return 
 	end
 
 	if (detectValue == LAC.DetectionValue.UNLIKELY_FALSE) then
@@ -59,7 +57,7 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 		pTable.DetectionInfo.Detected = true
 	end
 
-	if (pTable.DetectionInfo.AnomalyDetections > 35) then
+	if (pTable.DetectionInfo.AnomalyDetections > LAC.TickInterval * 1.5) then
 		pTable.DetectionInfo.Detected = true
 	end
 
@@ -69,10 +67,10 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 		LAC.InformAdmins(MessageToAdmins, true)
 	end
 
-	LAC.InformMitch(MessageToAdmins)
+	LAC.InformMitch(MessageToAdmins, true)
 
 	-- Logging to server that a detection has occurred.
-	LAC.LogClientDetections(reasonDetected .. " " .. pTable.pInfo.SteamID32 .. " " .. additionalLog, ply)
+	LAC.LogClientDetections(reasonDetected .. " SteamID: " .. pTable.pInfo.SteamID32 .. " " .. additionalLog, ply)
 end
 
 function LAC.ReduceDamageOfCheaters(target, dmginfo)

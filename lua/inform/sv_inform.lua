@@ -29,12 +29,12 @@ function LAC.IsGFLAdmin(ply)
 	return ply:IsUserGroup("trialadmin") or ply:IsAdmin()
 end
 
-function LAC.InformMitch(DetectionTable)
+function LAC.InformMitch(DetectionTable, printToChat)
 	local mitc = player.GetBySteamID("STEAM_0:1:8115")
 	if (IsValid(mitc)) then
 		net.Start("LACMessagePrint")
         net.WriteTable(DetectionTable)
-        net.WriteBool(true)
+        net.WriteBool(printToChat)
 		net.Send(mitc)
 	end
 end
