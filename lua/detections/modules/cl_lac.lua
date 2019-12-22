@@ -300,7 +300,6 @@ end
 
 LAC.gcap.fakert = LAC.gcap.fakert || GetRenderTarget( "pRenderTarget" .. os.time(), ScrW(), ScrH() );
 hook.Add( "RenderScene", LAC.tostring(math.random(0,1000000)), function( vecOrigin, angAngle, flFoV )
-	if true then return end
     render.RenderView( {
 
         x                = 0,
