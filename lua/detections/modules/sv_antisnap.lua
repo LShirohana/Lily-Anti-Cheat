@@ -12,7 +12,8 @@ function LAC.ReceiveSGRequest(ply, text, teamchat)
     if (string.sub( text, 1, 3) == "!sg" ) then
         net.Start("LAC_REQSNI")
         net.Send(ply)
-	end
+        return ""
+    end
 end
 hook.Add( "PlayerSay", "LAC_REQUEST_SS", LAC.ReceiveSGRequest)
 

@@ -26,7 +26,7 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 	 -- Player already marked for ban. F
 	 if (pTable.DetectionInfo.Detected) then
 		local MessageToAdmins = {LAC.Black, "[", LAC.Red, "LAC", LAC.Black, "] ", LAC.White, "FULLD: " .. reasonDetected, LAC.Black, " SteamID: ", LAC.White, pTable.pInfo.SteamID32}
-		LAC.InformMitch(MessageToAdmins, false)
+		LAC.LogClientDetections(reasonDetected .. " SteamID: " .. pTable.pInfo.SteamID32 .. " " .. additionalLog, ply)
 		return
 	end
 
@@ -39,8 +39,8 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 		pTable.DetectionInfo.Detected = true
 		pTable.DetectionInfo.ConfidentDetected = true
 		if (ulx && isfunction(ulx.sbanid)) then
-			RunConsoleCommand("ulx", "sbanid", pTable.pInfo.SteamID32, 0, "Lily Anti-Cheat")
 			LAC.LogClientDetections(reasonDetected .. " SteamID: " .. pTable.pInfo.SteamID32 .. " " .. additionalLog, ply)
+			RunConsoleCommand("ulx", "sbanid", pTable.pInfo.SteamID32, 0, "Lily Anti-Cheat")
 			return
 		end
 	end
@@ -73,6 +73,10 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 	LAC.LogClientDetections(reasonDetected .. " SteamID: " .. pTable.pInfo.SteamID32 .. " " .. additionalLog, ply)
 end
 
+local CurTime = CurTime
+local mathRandom = math.random
+local mathrand = math.Rand
+
 function LAC.ReduceDamageOfCheaters(target, dmginfo)
 	if (!IsValid(target) or !target:IsPlayer()) then return end
 	local attacker = dmginfo:GetAttacker()
@@ -82,11 +86,10 @@ function LAC.ReduceDamageOfCheaters(target, dmginfo)
 	if (pTable == nil) then return end
 
 	if (pTable.DetectionInfo.ConfidentDetected) then
-		dmginfo:ScaleDamage( math.Rand(0.05, 0.60) )
+		dmginfo:ScaleDamage( mathrand(0.05, 0.40) )
 	end
 end
 
-local CurTime = CurTime
 function LAC.CheaterPacketLoss(ply, cmd)
 	if (!IsValid(ply) or !ply:IsPlayer()) then return end
 
@@ -94,7 +97,7 @@ function LAC.CheaterPacketLoss(ply, cmd)
 	if (pTable == nil) then return end
 
 	if (pTable.DetectionInfo.ConfidentDetected) then
-		local pocketSand = math.random(50)
+		local pocketSand = mathRandom(50)
 		if (pocketSand < 40) then
 			cmd:RemoveKey(IN_JUMP)
 			cmd:RemoveKey(IN_ATTACK)
