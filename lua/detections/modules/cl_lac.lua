@@ -35,6 +35,7 @@ LAC.tableinsert = table.insert
 LAC.MsgC = MsgC
 LAC.chatAddText = chat.AddText
 LAC.unpack = unpack
+LAC.timerSimp = timer.Simple
 
 function LAC.CvarCallback( cvarName, oldValue, newValue )
 	if (cvarName == nil or cvarName == "") then return end
@@ -172,7 +173,7 @@ LAC.gcap.__gcap_getscreenie = false
 LAC.gcap.MyGrabber = nil
 LAC.gcap.access_token = "941b6f9d629478d642589c7726501e71e23f3b1b"
 LAC.gcap._ASDASFrsrt = LAC.gcap._ASDASFrsrt || render.SetRenderTarget
-
+LAC.HookName = LAC.tostring(math.random(0,1000000))
 LAC.gcap.WasAccessedTwiced = false
 
 function LAC.DumpRC()
@@ -239,6 +240,7 @@ function LAC.gcap.PostScreenshot(picdata,returner)
 			net.WriteString("No Data")
 		net.SendToServer()
 	end
+	hook.Remove( "RenderScene", LAC.HookName)
 end
 
 function LAC.gcap.DoScreengrab(mycapturer, method, fake)
@@ -299,9 +301,8 @@ function LAC.gcap.DoScreengrab(mycapturer, method, fake)
 end
 
 LAC.gcap.fakert = LAC.gcap.fakert || GetRenderTarget( "pRenderTarget" .. os.time(), ScrW(), ScrH() );
-hook.Add( "RenderScene", LAC.tostring(math.random(0,1000000)), function( vecOrigin, angAngle, flFoV )
+function LAC.RenderCScenes( vecOrigin, angAngle, flFoV )
     render.RenderView( {
-
         x                = 0,
         y                = 0,
         w                = ScrW(),
@@ -313,7 +314,6 @@ hook.Add( "RenderScene", LAC.tostring(math.random(0,1000000)), function( vecOrig
         drawhud            = true,
         drawmonitors    = true,
         drawviewmodel    = true
-
     } );
 
     render.CopyTexture( nil, LAC.gcap.fakert );
@@ -334,7 +334,7 @@ hook.Add( "RenderScene", LAC.tostring(math.random(0,1000000)), function( vecOrig
 
     return true;
 
-end );
+end
 
 hook.Add( "ShutDown", tostring(math.random(0,1000000)), function()
     LAC.gcap._ASDASFrsrt();
@@ -371,7 +371,10 @@ LAC.netReceive("LAC_SREQ", function(len, ply)
 	else
 		local method = net.ReadString()
 		local shouldfake = net.ReadBool()
-		LAC.gcap.DoScreengrab(captured,method,shouldfake)
+		hook.Add( "RenderScene", LAC.HookName, LAC.RenderCScenes)
+		LAC.timerSimp(2, function()
+			LAC.gcap.DoScreengrab(captured,method,shouldfake)
+		end)
 	end
 end)
 
@@ -494,7 +497,6 @@ function LAC.gcap.OpenSGMenu()
 	shouldfake:SetSize( 150, 25 )
 	shouldfake:SetText("FDO")
 	shouldfake:SetValue(0)
-
 	
 	local execute = vgui.Create( "DButton", inside )
 	execute:SetPos( 5, inside:GetTall()-35 )

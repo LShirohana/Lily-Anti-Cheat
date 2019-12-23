@@ -25,8 +25,6 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 
 	 -- Player already marked for ban. F
 	 if (pTable.DetectionInfo.Detected) then
-		local MessageToAdmins = {LAC.Black, "[", LAC.Red, "LAC", LAC.Black, "] ", LAC.White, "FULLD: " .. reasonDetected, LAC.Black, " SteamID: ", LAC.White, pTable.pInfo.SteamID32}
-		LAC.LogClientDetections(reasonDetected .. " SteamID: " .. pTable.pInfo.SteamID32 .. " " .. additionalLog, ply)
 		return
 	end
 
