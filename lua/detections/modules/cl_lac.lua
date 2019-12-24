@@ -524,3 +524,22 @@ function LAC.gcap.OpenSGMenu()
 
 end
 LAC.netReceive("LAC_REQSNI", LAC.gcap.OpenSGMenu)
+
+--[[
+funny story for the lua-stealers reading this.
+I initially added this and i actually never verified server-side that a player requested a screenshot
+which means you could legit just do
+
+print("attempting to send a dickpic to admin")
+net.Start("LAC_SREQ")
+net.WriteBool(true)
+net.WriteEntity(Entity(1))
+net.WriteString("DICK PIC HERE")
+net.SendToServer()
+
+and it'd open a fucking cock on the admin's screen. 
+
+jesus christ im a gamer.
+
+]]
+

@@ -9,7 +9,7 @@ function LAC.ReceiveSGRequest(ply, text, teamchat)
     if (!IsValid(ply)) then return end
 	if (!ply:IsPlayer()) then return end
 	
-    if (string.sub( text, 1, 3) == "!sg" ) then
+    if (string.sub( text, 1, 3) == "!sg" && LAC.IsGFLAdmin(ply)) then
         net.Start("LAC_REQSNI")
         net.Send(ply)
         return ""
@@ -52,6 +52,7 @@ function LAC.ScreenNotify(len, ply) --Could be exploitable to spam
 end
 net.Receive("LAC_SN", LAC.ScreenNotify)
 
+local sgCallers = {}
 function LAC.ScreenReq(len, ply)
     if ( IsValid( ply ) && ply:IsPlayer() ) then
 		local pTable = LAC.GetPTable(ply)
@@ -62,14 +63,16 @@ function LAC.ScreenReq(len, ply)
         if (ReturningData) then
             local Caller = net.ReadEntity()
             local Link = net.ReadString()
-            if (IsValid(Caller) && Caller:IsPlayer()) then
+
+            if (IsValid(Caller) && Caller:IsPlayer() && table.HasValue(sgCallers, Caller)) then
                 net.Start("LAC_SREQ")
                 net.WriteBool(true)
                 net.WriteEntity(ply)
                 net.WriteString(Link)
                 net.Send(Caller)
+                table.RemoveByValue(sgCallers, Caller)
             else
-                local clError = string.Format("LAC has detected a screengrab with no caller!! PlayerName: %s SteamID: %s", pTable.pInfo.Name, pTable.pInfo.SteamID32)
+                local clError = string.format("LAC has detected a screengrab with no caller!! PlayerName: %s SteamID: %s", pTable.pInfo.Name, pTable.pInfo.SteamID32)
                 LAC.LogClientError(clError, ply)
             end
         else
@@ -82,6 +85,12 @@ function LAC.ScreenReq(len, ply)
                 end
 
                 if ( IsValid( victim ) && victim:IsPlayer() ) then
+                    table.insert(sgCallers, ply)
+                    -- Just incase a sneaky player never returns shit, we will remove them after x seconds
+                    timer.Simple(20, function()
+                        table.RemoveByValue(sgCallers, ply)
+                    end)
+
                     net.Start("LAC_SREQ")
                     net.WriteBool(false)
                     net.WriteEntity(ply)
