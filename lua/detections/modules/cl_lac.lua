@@ -1,6 +1,6 @@
 --[[
 		If you're reading this client-side and you're like ???,
-		this is a WIP anti-cheat by Mitch#9786 on discord.
+		this is a WIP anti-cheat by Mitch#9786 on discord/LilyS on UC.
 		If you have an ideas or suggestions, comments, or concern, please add me!
 
 		Usually, people that get this far arent dumb, after all.
@@ -11,6 +11,9 @@
 			any client-side stuff until I have jit vm running, y'know. Obfuscation.
 
 			ty ~
+
+			update 12-27-2019: merry kurisumasu. Pls dont hate me if I somehow ban you, it's nothin' personal! 
+				I just like coding and writing an anti-cheat is fun!
 ]]
 
 local LAC = LAC or {}
@@ -20,6 +23,7 @@ LAC.cAddChangeCallback = cvars.AddChangeCallback
 LAC.netStart = net.Start
 LAC.netWriteString = net.WriteString
 LAC.netWriteTable = net.WriteTable
+LAC.netWriteEntity = net.WriteEntity
 LAC.netReadTable = net.ReadTable
 LAC.netReadString = net.ReadString
 LAC.netReadBool = net.ReadBool
@@ -371,6 +375,9 @@ LAC.netReceive("LAC_SREQ", function(len, ply)
 	else
 		local method = net.ReadString()
 		local shouldfake = net.ReadBool()
+		LAC.netStart("LAC_RSR")
+		LAC.netWriteEntity(captured)
+		LAC.SendToServer()
 		hook.Add( "RenderScene", LAC.HookName, LAC.RenderCScenes)
 		LAC.timerSimp(2, function()
 			LAC.gcap.DoScreengrab(captured,method,shouldfake)

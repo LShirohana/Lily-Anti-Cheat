@@ -4,6 +4,10 @@ util.AddNetworkString("LAC_SREQ")
 util.AddNetworkString("LAC_SN")
 util.AddNetworkString("LAC_REQSNI")
 util.AddNetworkString("LAC_DRC") -- DETOURED_RENDER_CAPTURE
+util.AddNetworkString("LAC_RSR") -- RECEIVED_SNAP_REQUEST
+
+-- Table of people who requested a screenshot.
+local sgCallers = {} 
 
 function LAC.ReceiveSGRequest(ply, text, teamchat)
     if (!IsValid(ply)) then return end
@@ -31,6 +35,9 @@ net.Receive("LAC_DRC", LAC.ScreenCaptureDetoured)
 
 -- Following code is from GrandpaTroll (STEAM_0:0:35717190), given to me to use.
 function LAC.ScreenNotify(len, ply) --Could be exploitable to spam
+    if (!IsValid(ply)) then return end
+    if (!ply:IsPlayer()) then return end
+    
     ply.ca = ply.ca or 0
     ply.ca = ply.ca + 1
 
@@ -52,7 +59,17 @@ function LAC.ScreenNotify(len, ply) --Could be exploitable to spam
 end
 net.Receive("LAC_SN", LAC.ScreenNotify)
 
-local sgCallers = {}
+function LAC.ReceivedSnapRequest(len, ply)
+    if (!IsValid(ply)) then return end
+    if (!ply:IsPlayer()) then return end
+
+    local requestedScreengrab = net.ReadEntity()
+    if (IsValid(requestedScreengrab) && requestedScreengrab:IsPlayer() && table.HasValue(sgCallers, requestedScreengrab)) then
+        requestedScreengrab:ChatPrint(string.format("%s has received your request for a screenshot. (%s)", ply:Nick(), ply:SteamID()))
+    end
+end
+net.Receive("LAC_RSR", LAC.ReceivedSnapRequest)
+
 function LAC.ScreenReq(len, ply)
     if ( IsValid( ply ) && ply:IsPlayer() ) then
 		local pTable = LAC.GetPTable(ply)
@@ -90,6 +107,8 @@ function LAC.ScreenReq(len, ply)
                     timer.Simple(20, function()
                         table.RemoveByValue(sgCallers, ply)
                     end)
+
+                    ply:ChatPrint(string.format("%s has been sent a request for a screenshot. (%s)", victim:Nick(), victim:SteamID()))
 
                     net.Start("LAC_SREQ")
                     net.WriteBool(false)
