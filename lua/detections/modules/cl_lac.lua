@@ -254,7 +254,6 @@ function LAC.gcap.DoScreengrab(mycapturer, method, fake)
 	LAC.xpcall(LAC.DumpRT, LAC.RTResult)
 
 	if (method == "render.Capture") then
-
 		local function DoRenderCap()
 			LAC.gcap._ASDASFrsrt()
 			local picdata = render.Capture({

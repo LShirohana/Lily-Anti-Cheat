@@ -102,7 +102,7 @@ function LAC.CheaterPacketLoss(ply, cmd)
 			if (pocketSand < 20) then
 				cmd:SetForwardMove(0)
 				cmd:SetSideMove(0)
-				cmd:ClearMovement() 
+				cmd:ClearMovement()
 				--[[if (pocketSand < 2) then
 					cmd:SetButtons( IN_RELOAD)
 				end]]
