@@ -215,6 +215,15 @@ function LAC.StartCommand(ply, CUserCmd)
 		pTable = LAC.GetPTable(ply);
 	end
 
+	--[[
+	Notes from Nick:
+		move name info set to a diff hook. this is called too often.
+		pass by ref since tables in lua are passed by ref
+		initialize ptable to nil -> possibly not worth. currently decided against.
+		cannot merge all hooks due to organization. Either redo organization or decide against it. Probably former.
+
+	]]
+
 	pTable.pInfo.Name = ply:Name()
 
 	if (LAC.IsTTT()) then
@@ -279,6 +288,7 @@ end
 	if they are.
 ]]
 -- Internally these are floats, but if you're setting your cl_forwardmove to 450.4 you're kinda dumb
+-- TODO: move the following code below into a helper function where I just call IsPossibleMoveValue(int)
 local maxSideMove = GetConVar("cl_sidespeed"):GetInt()
 local maxForwardMove = GetConVar("cl_forwardspeed"):GetInt()
 local maxUpMove = GetConVar("cl_upspeed"):GetInt()
@@ -367,7 +377,10 @@ function LAC.CheckMovement(ply, CUserCmd)
 
 	if (sidemove != 0) then
 
-		if (possibleSValues[sidemoveAbs] == nil) then
+		if (maxSideMove * 0.0 == sidemoveAbs or
+			maxSideMove * 0.25 == sidemoveAbs or 
+			maxSideMove * 0.50 == sidemoveAbs or 
+			maxSideMove * 1.0 == sidemoveAbs) then
 			local debugInfolol = string.format("PacketLoss: %f Ping: %f MoveType: %i Buttons: %i Flags: %i", ply:PacketLoss(), ply:Ping(), ply:GetMoveType(), buttons, ply:GetFlags())
 			local DetectionString = string.format("Detected %s with improper movement! sMove= %f", pTable.pInfo.Name, sidemove);
 			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.ANOMALY, ply, false, debugInfolol)
