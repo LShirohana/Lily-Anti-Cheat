@@ -546,6 +546,7 @@ local OkayKeys =
 	"+voicerecord",
 	"ttt_toggle_disguise",
 	"kill", -- yeah i literally saw someone bind DELETE to kill. lmao
+	"toggleconsole",
 }
 
 function LAC.ReceiveBindInfo(len, ply)
