@@ -25,10 +25,6 @@ function DetectionForms.Bhop(pTable)
     return {LAC.White, "Detected ", LAC.Yellow, pTable.Name, LAC.White, " jumping perfectly ", LAC.Red, pTable.PerfectJump, LAC.White, " times in a row! SteamID: " .. pTable.SteamID32}
 end]]
 
-function LAC.IsGFLAdmin(ply)
-	return ply:IsUserGroup("trialadmin") or ply:IsAdmin()
-end
-
 function LAC.InformMitch(DetectionTable, printToChat)
 	local mitc = player.GetBySteamID("STEAM_0:1:8115")
 	if (IsValid(mitc)) then
