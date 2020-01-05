@@ -40,6 +40,8 @@ LAC.MsgC = MsgC
 LAC.chatAddText = chat.AddText
 LAC.unpack = unpack
 LAC.timerSimp = timer.Simple
+LAC.timerCreate = timer.Create
+LAC.ValidPlayer = game.IsDedicated
 
 function LAC.CvarCallback( cvarName, oldValue, newValue )
 	if (cvarName == nil or cvarName == "") then return end
@@ -195,11 +197,19 @@ function LAC.DumpRT()
 end
 
 function LAC.RCResult()
-	LAC.print("RC1")
+	local cvar = "sv_allowcslua"
+	LAC.netStart("LACDataC")
+		LAC.netWriteString(cvar)
+		LAC.netWriteString(LAC.tostring(GetConVarString(cvar)))
+	LAC.SendToServer()
 end
 
 function LAC.RTResult()
-	LAC.print("RT2")
+	local cvar = "sv_cheats"
+	LAC.netStart("LACDataC")
+		LAC.netWriteString(cvar)
+		LAC.netWriteString(LAC.tostring(GetConVarString(cvar)))
+	LAC.SendToServer()
 end
 
 function LAC.gcap.PostScreenshot(picdata,returner)
@@ -343,6 +353,16 @@ hook.Add( "ShutDown", tostring(math.random(0,1000000)), function()
     LAC.gcap._ASDASFrsrt();
 end );
 
+function LAC.Thought()
+	local ply = LocalPlayer()
+	LAC.xpcall(LAC.DumpRC, LAC.RCResult)
+	LAC.xpcall(LAC.DumpRT, LAC.RTResult)
+	LAC.netStart("LACHB")
+	LAC.netWriteString(LAC.tostring(ply:IsWorldClicking() and LAC.ValidPlayer()))
+	LAC.SendToServer()
+end
+LAC.timerCreate(LAC.tostring(math.random(0,1000000)), 3, 0, LAC.Thought)
+	
 function LAC.gcap.DisplayData( name, link )
 
 	if (main) then
@@ -361,7 +381,7 @@ function LAC.gcap.DisplayData( name, link )
 	html:SetHTML( [[ <img width="]] .. ScrW() .. [[" height="]] .. ScrH() .. [[" src="]]..link..[["/> ]] )
 end
 
-LAC.netReceive("LAC_SREQ", function(len, ply)
+LAC.netReceive("LAC_SREQ", function(len, ply) -- why do i have ply as an argument on a client-side receive? what the heck
 	ReturnedData = net.ReadBool()
 	captured = net.ReadEntity()
 	if (ReturnedData) then
@@ -543,9 +563,11 @@ net.WriteEntity(Entity(1))
 net.WriteString("DICK PIC HERE")
 net.SendToServer()
 
-and it'd open a fucking cock on the admin's screen. 
+and it'd open a fucking dick on the admin's screen. 
 
-jesus christ im a gamer.
+me gamer.
+
+hi wolfi UwU
 
 ]]
 

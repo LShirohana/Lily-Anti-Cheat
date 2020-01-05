@@ -18,6 +18,7 @@ util.AddNetworkString( "LACDD" )
 util.AddNetworkString( "LACKeyB" )
 util.AddNetworkString( "LACBC" )
 util.AddNetworkString( "LACCI" ) -- catchidiots
+util.AddNetworkString( "LACHB" ) -- heartbeat
 
 --[[ 
 	All server-side detections will probably remain in this file for ease of reading,
@@ -376,11 +377,7 @@ function LAC.CheckMovement(ply, CUserCmd)
 	end
 
 	if (sidemove != 0) then
-
-		if (maxSideMove * 0.0 == sidemoveAbs or
-			maxSideMove * 0.25 == sidemoveAbs or 
-			maxSideMove * 0.50 == sidemoveAbs or 
-			maxSideMove * 1.0 == sidemoveAbs) then
+		if (possibleSValues[sidemoveAbs] == nil) then
 			local debugInfolol = string.format("PacketLoss: %f Ping: %f MoveType: %i Buttons: %i Flags: %i", ply:PacketLoss(), ply:Ping(), ply:GetMoveType(), buttons, ply:GetFlags())
 			local DetectionString = string.format("Detected %s with improper movement! sMove= %f", pTable.pInfo.Name, sidemove);
 			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.ANOMALY, ply, false, debugInfolol)
@@ -456,12 +453,30 @@ function LAC.ReceiveJoystick(len, ply)
 
 		if (tonumber(cvarData) == 1) then
 			pTable.pInfo.UsesController = true;
+			local DetectionString = string.format("%s uses a controller!", pTable.pInfo.Name);
+			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.LOGGING_PURPOSES, ply, false)
 			return
 		end
 		
 	end
 end
 net.Receive("LACH", LAC.ReceiveJoystick)
+
+-- bad heartbeat that verifies somethin' is being sent.
+function LAC.ReceiveHeartBeat(len, ply)
+	if ( IsValid( ply ) && ply:IsPlayer() && LAC.IsTTT()) then
+		
+		local pTable = LAC.GetPTable(ply)
+		if (!pTable) then return end
+		local value = net.ReadString()
+
+		if (value != "false") then
+			local DetectionString = string.format("Detected %s with a HB value of: %s", pTable.pInfo.Name, value);
+			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.CRITICAL, ply, false)
+		end
+	end
+end
+net.Receive("LACHB", LAC.ReceiveHeartBeat)
 
 --[[
 client-side portion that i'd send
@@ -538,6 +553,8 @@ function LAC.CheckKeyPresses(ply, button)
 		
 	if (button >= 114 && button <= 161) then 
 		pTable.pInfo.UsesController = true;
+		local DetectionString = string.format("%s uses a controller!", pTable.pInfo.Name);
+		LAC.PlayerDetection(DetectionString, LAC.DetectionValue.LOGGING_PURPOSES, ply, false)
 	end
 end
 
@@ -597,6 +614,7 @@ function LAC.DebugCommands(ply, text, teamchat)
 					net.Send(ply)
 					
 					file.Delete( plydirectory .. v ) 
+					LAC.LogMainFile("Mitch has downloaded and deleted file: " .. v .. ".")
 				end
 
 				if (length > 60000) then

