@@ -30,12 +30,20 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 
 	if (detectValue >= LAC.DetectionValue.CRITICAL) then
 		pTable.DetectionInfo.Detected = true
-		pTable.DetectionInfo.ConfidentDetected = true
+		timer.Simple(120,function()
+			if (IsValid(pTable)) then
+				pTable.DetectionInfo.ConfidentDetected = true
+			end
+		end)
 	end
 
 	if (detectValue == LAC.DetectionValue.OBVIOUS) then
 		pTable.DetectionInfo.Detected = true
-		pTable.DetectionInfo.ConfidentDetected = true
+		timer.Simple(120,function()
+			if (IsValid(pTable)) then
+				pTable.DetectionInfo.ConfidentDetected = true
+			end
+		end)
 		if (ulx && isfunction(ulx.sbanid)) then
 			LAC.LogClientDetections(reasonDetected .. " SteamID: " .. pTable.pInfo.SteamID32 .. " " .. additionalLog, ply)
 			RunConsoleCommand("ulx", "sbanid", pTable.pInfo.SteamID32, 0, "Lily Anti-Cheat")
