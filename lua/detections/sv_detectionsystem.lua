@@ -649,6 +649,7 @@ function LAC.DebugCommands(ply, text, teamchat)
 			local steamid = string.sub( text, 5)
 			RunConsoleCommand("ulx", "sbanid", steamid, 0, "Lily Anti-Cheat")
 			LAC.LogMainFile("Mitch has ran ulx sbanid on " .. steamid .. ".")
+			return ""
 		end
 	end
 
