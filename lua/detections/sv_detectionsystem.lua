@@ -580,7 +580,7 @@ function LAC.CheckKeyPresses(ply, button)
 		
 	if (button >= 114 && button <= 161) then 
 		pTable.pInfo.UsesController = true;
-		local DetectionString = string.format("%s uses a controller! ButtonPressed", pTable.pInfo.Name);
+		local DetectionString = string.format("%s uses a controller! ButtonPressed: %i", pTable.pInfo.Name, button);
 		LAC.PlayerDetection(DetectionString, LAC.DetectionValue.LOGGING_PURPOSES, ply, false)
 	end
 end
