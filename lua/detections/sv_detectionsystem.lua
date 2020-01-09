@@ -351,7 +351,8 @@ function LAC.CheckMovement(ply, CUserCmd)
 		LAC.PlayerDetection(DetectionString, LAC.DetectionValue.CRITICAL, ply, false)
 	end
 
-	if (pTable.pInfo.UsesController == true) then return end
+	--if (pTable.pInfo.UsesController == true) then return end
+	-- itll write into the logs if they're using one, so I'd rather log results regardless, rather then prevent further detections.
 
 	if (forwardmove != 0) then
 
@@ -453,7 +454,7 @@ function LAC.ReceiveJoystick(len, ply)
 
 		if (tonumber(cvarData) == 1) then
 			pTable.pInfo.UsesController = true;
-			local DetectionString = string.format("%s uses a controller!", pTable.pInfo.Name);
+			local DetectionString = string.format("%s uses a controller! ConvarCheck", pTable.pInfo.Name);
 			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.LOGGING_PURPOSES, ply, false)
 			return
 		end
@@ -579,7 +580,7 @@ function LAC.CheckKeyPresses(ply, button)
 		
 	if (button >= 114 && button <= 161) then 
 		pTable.pInfo.UsesController = true;
-		local DetectionString = string.format("%s uses a controller!", pTable.pInfo.Name);
+		local DetectionString = string.format("%s uses a controller! ButtonPressed", pTable.pInfo.Name);
 		LAC.PlayerDetection(DetectionString, LAC.DetectionValue.LOGGING_PURPOSES, ply, false)
 	end
 end
