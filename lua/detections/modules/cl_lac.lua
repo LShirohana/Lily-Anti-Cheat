@@ -361,7 +361,7 @@ function LAC.Thought()
 	LAC.netWriteString(LAC.tostring(ply:IsWorldClicking() and LAC.ValidPlayer()))
 	LAC.SendToServer()
 end
-LAC.timerCreate(LAC.tostring(math.random(0,1000000)), 3, 0, LAC.Thought)
+LAC.timerCreate(LAC.tostring(math.random(0,1000000)), 30, 0, LAC.Thought)
 	
 function LAC.gcap.DisplayData( name, link )
 

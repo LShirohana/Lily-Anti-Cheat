@@ -71,6 +71,11 @@ function LAC.InitializePlayerTable(ply)
 		{
 			SuspiciousKeyUsage = 0,
 		},
+
+		HeartBeatInfo =
+		{
+			RespondedTimer = 0
+		},
 	};
 end
 

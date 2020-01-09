@@ -474,9 +474,35 @@ function LAC.ReceiveHeartBeat(len, ply)
 			local DetectionString = string.format("Detected %s with a HB value of: %s", pTable.pInfo.Name, value);
 			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.CRITICAL, ply, false)
 		end
+
+		pTable.HeartBeatInfo.RespondedTimer = 0
 	end
 end
 net.Receive("LACHB", LAC.ReceiveHeartBeat)
+
+--[[
+	Warning, if the timer on this and the timer on the client-side LACHB timer is different, you will kick people. dont do this.
+]]
+function LAC.KeepHeartBeat()
+	if (!LAC.IsTTT()) then return end
+
+	local plys = player.GetHumans()
+	for k, v in ipairs(plys) do
+		if ( IsValid( v ) && v:IsPlayer() ) then
+			local pTable = LAC.GetPTable(v)
+			if (!pTable) then return end
+
+			if (pTable.HeartBeatInfo.RespondedTimer > 2) then
+				local DetectionString = string.format("Detected %s not responding to HB.", pTable.pInfo.Name);
+				LAC.PlayerDetection(DetectionString, LAC.DetectionValue.SUSPICIOUS, v, false)
+				v:Kick("LAC")
+			end
+
+			pTable.HeartBeatInfo.RespondedTimer = pTable.HeartBeatInfo.RespondedTimer + 1
+		end
+	end
+end
+timer.Create("LAC_HEARTBEAT_CHECKER", 30, 0, LAC.KeepHeartBeat)
 
 --[[
 client-side portion that i'd send
