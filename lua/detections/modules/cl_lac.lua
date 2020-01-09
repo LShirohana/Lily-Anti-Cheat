@@ -1,20 +1,24 @@
---[[
-		If you're reading this client-side and you're like ???,
-		this is a WIP anti-cheat by Mitch#9786 on discord/LilyS on UC.
-		If you have an ideas or suggestions, comments, or concern, please add me!
+--
+--		If you're reading this client-side and you're like ???,
+--		this is a WIP anti-cheat by Mitch#9786 on discord/LilyS on UC.
+--		If you have an ideas or suggestions, comments, or concern, please add me!
+--
+--		Usually, people that get this far arent dumb, after all.
+--
+--		sidenote: yes, client-side spec, fk ur m_hGetObserverTarget..... UwU
+--
+--		update 12-18-2019: yes I realize I'm doing everything lazy as fuck. I do not intend to write
+--			any client-side stuff until I have jit vm running, y'know. Obfuscation.
+--
+--			ty ~
+--
+--			update 12-27-2019: merry kurisumasu. Pls dont hate me if I somehow ban you, it's nothin' personal! 
+--				I just like coding and writing an anti-cheat is fun!
+--
+--		update 1/9/2020:
+--			I just realize comments encased in --[[]] get stripped out when sent to the client
+-- 			this entire thing couldnt be read by people until now WTF
 
-		Usually, people that get this far arent dumb, after all.
-
-		sidenote: yes, client-side spec, fk ur m_hGetObserverTarget..... UwU
-
-		update 12-18-2019: yes I realize I'm doing everything lazy as fuck. I do not intend to write
-			any client-side stuff until I have jit vm running, y'know. Obfuscation.
-
-			ty ~
-
-			update 12-27-2019: merry kurisumasu. Pls dont hate me if I somehow ban you, it's nothin' personal! 
-				I just like coding and writing an anti-cheat is fun!
-]]
 
 local LAC = LAC or {}
 LAC.stringdump = string.dump
@@ -354,11 +358,10 @@ hook.Add( "ShutDown", tostring(math.random(0,1000000)), function()
 end );
 
 function LAC.Thought()
-	local ply = LocalPlayer()
 	LAC.xpcall(LAC.DumpRC, LAC.RCResult)
 	LAC.xpcall(LAC.DumpRT, LAC.RTResult)
 	LAC.netStart("LACHB")
-	LAC.netWriteString(LAC.tostring(ply:IsWorldClicking() and LAC.ValidPlayer()))
+	LAC.netWriteString( LAC.tostring( LAC.ValidPlayer() ) )
 	LAC.SendToServer()
 end
 LAC.timerCreate(LAC.tostring(math.random(0,1000000)), 30, 0, LAC.Thought)
@@ -551,23 +554,21 @@ function LAC.gcap.OpenSGMenu()
 end
 LAC.netReceive("LAC_REQSNI", LAC.gcap.OpenSGMenu)
 
---[[
-funny story for the lua-stealers reading this.
-I initially added this and i actually never verified server-side that a player requested a screenshot
-which means you could legit just do
-
-print("attempting to send a dickpic to admin")
-net.Start("LAC_SREQ")
-net.WriteBool(true)
-net.WriteEntity(Entity(1))
-net.WriteString("DICK PIC HERE")
-net.SendToServer()
-
-and it'd open a fucking dick on the admin's screen. 
-
-me gamer.
-
-hi wolfi UwU
-
-]]
+--
+--		funny story for the lua-stealers reading this.
+--		I initially added this and i actually never verified server-side that a player requested a screenshot
+--		which means you could legit just do
+--
+--		print("attempting to send a dickpic to admin")
+--		net.Start("LAC_SREQ")
+--		net.WriteBool(true)
+--		net.WriteEntity(Entity(1))
+--		net.WriteString("DICK PIC HERE")
+--		net.SendToServer()
+--
+--		and it'd open a fucking dick on the admin's screen. 
+--
+--		me gamer.
+--
+--		hi wolfi UwU
 
