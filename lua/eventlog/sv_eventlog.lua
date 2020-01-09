@@ -76,3 +76,29 @@ function LAC.LogEvent(eventString, fileName, fileDir)
 end
 
 --LAC.LogEvent("Event Log System Loaded.", LAC.GetDate("%d-%m-%Y-log"), LAC.MainLogFile)
+
+--[[
+PlayerTable:
+	PLAYER_ID primkey
+	NAME_HISTORY
+	IP_ADDRESS
+
+DETECTION_TABLE:
+	ID AUTOINCREMENT INT NOT NULL
+	PLAYER_ID 
+	DATE
+	REASON
+	VALUE
+	DAT
+	BANNED_BOOL
+
+LOG_TABLE
+	ID AUTOINCREMENT INT NOT NULL
+	TIME
+	LOG_STRING
+
+
+
+
+
+]]
