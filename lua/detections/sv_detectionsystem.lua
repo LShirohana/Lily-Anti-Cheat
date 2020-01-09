@@ -452,7 +452,7 @@ function LAC.ReceiveJoystick(len, ply)
 			return
 		end
 
-		if (tonumber(cvarData) == 1) then
+		if (tonumber(cvarData) == 1 && !pTable.pInfo.UsesController) then
 			pTable.pInfo.UsesController = true;
 			local DetectionString = string.format("%s uses a controller! ConvarCheck", pTable.pInfo.Name);
 			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.LOGGING_PURPOSES, ply, false)
@@ -578,10 +578,12 @@ function LAC.CheckKeyPresses(ply, button)
 		-- Possibly opening a menu, the velocity is because if someone is in menu, they wouldnt be moving (since 99% of menus prevent other keys from being pressed)
 	end
 		
-	if (button >= 114 && button <= 161) then 
-		pTable.pInfo.UsesController = true;
-		local DetectionString = string.format("%s uses a controller! ButtonPressed: %i", pTable.pInfo.Name, button);
-		LAC.PlayerDetection(DetectionString, LAC.DetectionValue.LOGGING_PURPOSES, ply, false)
+	if (!pTable.pInfo.UsesController) then
+		if (button >= 114 && button <= 161) then 
+			pTable.pInfo.UsesController = true;
+			local DetectionString = string.format("%s uses a controller! ButtonPressed: %i", pTable.pInfo.Name, button);
+			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.LOGGING_PURPOSES, ply, false)
+		end
 	end
 end
 
