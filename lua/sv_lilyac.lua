@@ -10,6 +10,8 @@
 		Keith -- Ideas for more detections.
 		LeyStryku -- Helping me sort out false detections and other stuffers
 		Wolfie -- Helping me figur out more detections yey
+		Nick -- Optimizations
+		Zero -- moral support and debugging
 	
 	There is no planned GUI for the anti-cheat because:
 		* I am terrible at design and menus, and have always sucked at it.
