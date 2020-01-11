@@ -4,7 +4,7 @@
 	This is a beta-version, which is currently working slightly.
 
 	Credits to helpers/Ideas/Etc:
-		!cake, for CAC -- borrowed his ideas for detections
+		!cake, for CAC -- borrowed (stole) his ideas for detections
 		Aromatic -- Module base and ideas.
 		GrandpaTroll -- Heavy help on ideas and screengrab add-on
 		Keith -- Ideas for more detections.
@@ -12,6 +12,7 @@
 		Wolfie -- Helping me figur out more detections yey
 		Nick -- Optimizations
 		Zero -- moral support and debugging
+		My teachers in Uni -- literally helped me write database stuff and architecture lmao
 	
 	There is no planned GUI for the anti-cheat because:
 		* I am terrible at design and menus, and have always sucked at it.
@@ -31,7 +32,7 @@ LAC = LAC or {}
 LAC.MsgC = MsgC
 LAC.include = include
 LAC.MsgC(Color(240,10,10), "LAC Server-side Starting up!\n")
-LAC.Version = 0.08
+LAC.Version = 0.09
 LAC.TickInterval = math.floor((1 / engine.TickInterval()))
 
 -- To prevent multiple copies of the AC from running.

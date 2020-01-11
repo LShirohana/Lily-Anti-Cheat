@@ -2,11 +2,10 @@
 
 ## Info
 This is an anti-cheat written for GFL, licensed to them by Lily (STEAM_0:1:8115)
-Currently on version 0.8 -> 12/21/2019
 
 ## How to use?
 
-It is currently non-obfuscated, with simple server-side verification and detection. No client-side info is checked aside from CVar data.
+It is currently non-obfuscated, with simple server-side verification and detection. No client-side info is checked aside from CVar data/ Screengrabber / simple data transfer.
 
 **The AC currently targets specific features and relies on keeping the player in the dark of methods used.**
 

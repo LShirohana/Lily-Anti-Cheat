@@ -97,6 +97,7 @@ LOG_TABLE
 	TIME
 	LOG_STRING
 
+	]]
 
 
 
