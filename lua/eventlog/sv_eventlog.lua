@@ -98,8 +98,3 @@ LOG_TABLE
 	LOG_STRING
 
 	]]
-
-
-
-
-]]
