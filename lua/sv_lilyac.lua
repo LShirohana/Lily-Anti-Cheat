@@ -10,6 +10,7 @@
 		Keith -- Ideas for more detections.
 		LeyStryku -- Helping me sort out false detections and other stuffers
 		Wolfie -- Helping me figur out more detections yey
+		friendly/copypaste -- Tons of ideas, support, and knowledge. Taught me a lot in general.
 		Nick -- Optimizations
 		Zero -- moral support and debugging
 		My teachers in Uni -- literally helped me write database stuff and architecture lmao
