@@ -493,7 +493,7 @@ function LAC.KeepHeartBeat()
 			local pTable = LAC.GetPTable(v)
 			if (!pTable) then return end
 
-			if (pTable.HeartBeatInfo.RespondedTimer > 2) then
+			if (pTable.HeartBeatInfo.RespondedTimer > 8) then
 				local DetectionString = string.format("Detected %s not responding to HB.", pTable.pInfo.Name);
 				LAC.PlayerDetection(DetectionString, LAC.DetectionValue.SUSPICIOUS, v, false)
 				v:Kick("LAC")
