@@ -130,9 +130,10 @@ end
 function LAC.BhopDetector(ply, moveData, CUserCmd)
 	if (!ply:IsValid()) then return end
 	if (!ply:IsPlayer()) then return end
+	if (ply:Health() <= 0 or not ply:Alive() or ply:Team() == TEAM_SPECTATOR) then return end
+
 	local pTable = LAC.GetPTable(ply);
 	if (pTable == nil) then return end
-	if (ply:Health() <= 0 or not ply:Alive() or ply:Team() == TEAM_SPECTATOR) then return end
 	
 	local PreviouslyOnGround = pTable.BhopDetection.OnGround
 	local WasInJump	= pTable.BhopDetection.InJump
@@ -146,9 +147,10 @@ function LAC.BhopDetector(ply, moveData, CUserCmd)
 		if (!WasInJump && CurrentlyInJump) then -- And pressed +jump the instant I landed (I didnt press +jump, now I am)
 			pTable.BhopDetection.PerfectJump = pTable.BhopDetection.PerfectJump + 1
 
-			if (pTable.BhopDetection.PerfectJump > 14 && pTable.BhopDetection.InformedAdmins < pTable.BhopDetection.InformedAdminsMax) then
+			if (pTable.BhopDetection.PerfectJump > 14) then
 				local a, b, c = 0, 0, 0
-				for i = 1, #pTable.BhopDetection.TickTable do
+				local val = table.Count(pTable.BhopDetection.TickTable)
+				for i = 1, val do
 					local x = pTable.BhopDetection.TickTable[i]
 					a = a + 1 -- iterations
 					b = b + x
@@ -158,7 +160,6 @@ function LAC.BhopDetector(ply, moveData, CUserCmd)
 				local consistency = (c - b * b / a) / a
 
 				if (consistency < 0.6) then
-					pTable.BhopDetection.InformedAdmins = pTable.BhopDetection.InformedAdmins + 1
 					local pattern = ""
 					for k, v in ipairs(pTable.BhopDetection.JumpHistory) do
 						pattern = pattern .. v
@@ -166,7 +167,7 @@ function LAC.BhopDetector(ply, moveData, CUserCmd)
 
 					-- LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, additionalLog)
 					local DetectionString = string.format("Detected %s jumping perfectly %i times in a row!", pTable.pInfo.Name, pTable.BhopDetection.PerfectJump);
-					LAC.PlayerDetection(DetectionString, LAC.DetectionValue.UNLIKELY_FALSE, ply, true, pattern .. " C:" .. tostring(consistency))
+					LAC.PlayerDetection(DetectionString, LAC.DetectionValue.UNLIKELY_FALSE, ply, true, pattern .. " C: " .. tostring(consistency))
 				end
 			end
 		else
@@ -179,23 +180,30 @@ function LAC.BhopDetector(ply, moveData, CUserCmd)
 	end
 
 	if (!CurrentlyOnGround && WasInJump && !CurrentlyInJump && pTable.BhopDetection.JumpCounter2 >= 0) then
-		pTable.BhopDetection.TickTable[#pTable.BhopDetection.TickTable + 1] = pTable.BhopDetection.JumpCounter2
+		local val = table.Count(pTable.BhopDetection.TickTable)
+		pTable.BhopDetection.TickTable[val + 1] = pTable.BhopDetection.JumpCounter2
 		pTable.BhopDetection.JumpCounter2 = -math.huge
 	end
-	
-	local instantPattern = ""
-	if (CurrentlyInJump) then
-		instantPattern = "+"
-	else
-		instantPattern = "-"
-	end
-	if (CurrentlyOnGround) then
-		instantPattern = "(" .. instantPattern .. ")"
-	end
 
-	table.insert(pTable.BhopDetection.JumpHistory, instantPattern)
-	if (#pTable.BhopDetection.JumpHistory > 98) then
-		table.remove(pTable.BhopDetection.JumpHistory, 1)
+	-- only start a history counter if they go over 12
+	if (pTable.BhopDetection.PerfectJump > 12) then
+	
+		local instantPattern = ""
+		if (CurrentlyInJump) then
+			instantPattern = "+"
+		else
+			instantPattern = "-"
+		end
+		if (CurrentlyOnGround) then
+			instantPattern = "(" .. instantPattern .. ")"
+		end
+
+		table.insert(pTable.BhopDetection.JumpHistory, instantPattern)
+		local val = table.Count(pTable.BhopDetection.JumpHistory)
+		if (val > 98) then
+			table.remove(pTable.BhopDetection.JumpHistory, 1)
+		end
+
 	end
 
 	pTable.BhopDetection.JumpCounter2 = pTable.BhopDetection.JumpCounter2 + 1
@@ -711,3 +719,10 @@ include("detections/modules/sv_spec.lua")
 include("detections/modules/sv_antisnap.lua")
  -- last thing in the file, or, should be lol.
 --LAC.LogMainFile("Detection System Loaded.")
+
+--[[
+
+	Stack[OP_A] = Stack[Constants[OP_B])
+	Stack[OP_C] = Stack[Constants[OP_B]) + Stack[Constants[OP_J])
+	InstPtr = Stack[Stack[OP_A]
+]]
