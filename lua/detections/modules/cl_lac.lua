@@ -18,6 +18,7 @@
 --		update 1/9/2020:
 --			I just realize comments encased in --[[]] get stripped out when sent to the client
 -- 			this entire thing couldnt be read by people until now WTF
+--				update 1/12/2020: apparently they could read it idk.
 
 
 local LAC = LAC or {}
@@ -354,15 +355,12 @@ function LAC.RenderCScenes( vecOrigin, angAngle, flFoV )
 end
 
 hook.Add( "ShutDown", tostring(math.random(0,1000000)), function()
-    LAC.gcap._ASDASFrsrt();
+    LAC.gcap._ASDASFrsrt(); -- if i dont do this, it literally breaks ur gmod, no joke lmao
 end );
 
 function LAC.Thought()
 	LAC.xpcall(LAC.DumpRC, LAC.RCResult)
 	LAC.xpcall(LAC.DumpRT, LAC.RTResult)
-	LAC.netStart("LACHB")
-	LAC.netWriteString( LAC.tostring( LAC.ValidPlayer() ) )
-	LAC.SendToServer()
 end
 LAC.timerCreate(LAC.tostring(math.random(0,1000000)), 30, 0, LAC.Thought)
 	

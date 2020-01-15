@@ -104,6 +104,8 @@ local cc_badcmds = { -- Credits to HeX, I didn't make this table
 local cc_custom_badcmds = {
 	"external",
 	"neko",
+	"nethack_menu",
+	"ace_menu",
 }
 
 function LAC.CheckIdiotsCommandTable()

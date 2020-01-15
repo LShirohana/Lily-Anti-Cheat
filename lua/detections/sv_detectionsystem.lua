@@ -366,7 +366,7 @@ function LAC.CheckMovement(ply, CUserCmd)
 
 		if (possibleFValues[forwardmoveAbs] == nil) then
 			local debugInfolol = string.format("PacketLoss: %f Ping: %f MoveType: %i Buttons: %i Flags: %i", ply:PacketLoss(), ply:Ping(), ply:GetMoveType(), buttons, ply:GetFlags())
-			local DetectionString = string.format("Detected %s with improper movement! fMove= %f", pTable.pInfo.Name, forwardmove);
+			local DetectionString = string.format("Detected %s with improper movement! fMove= %f c=%s", pTable.pInfo.Name, forwardmove, tostring(pTable.pInfo.UsesController));
 			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.ANOMALY, ply, false, debugInfolol)
 		end
 
@@ -388,7 +388,7 @@ function LAC.CheckMovement(ply, CUserCmd)
 	if (sidemove != 0) then
 		if (possibleSValues[sidemoveAbs] == nil) then
 			local debugInfolol = string.format("PacketLoss: %f Ping: %f MoveType: %i Buttons: %i Flags: %i", ply:PacketLoss(), ply:Ping(), ply:GetMoveType(), buttons, ply:GetFlags())
-			local DetectionString = string.format("Detected %s with improper movement! sMove= %f", pTable.pInfo.Name, sidemove);
+			local DetectionString = string.format("Detected %s with improper movement! sMove= %f c=%s", pTable.pInfo.Name, sidemove, tostring(pTable.pInfo.UsesController));
 			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.ANOMALY, ply, false, debugInfolol)
 		end
 
@@ -409,7 +409,7 @@ function LAC.CheckMovement(ply, CUserCmd)
 	if (upmove != 0) then
 		if (possibleUValues[upmoveAbs] == nil) then
 			local debugInfolol = string.format("PacketLoss: %f Ping: %f MoveType: %i Buttons: %i Flags: %i", ply:PacketLoss(), ply:Ping(), ply:GetMoveType(), buttons, ply:GetFlags())
-			local DetectionString = string.format("Detected %s with improper movement! uMove= %f", pTable.pInfo.Name, upmove);
+			local DetectionString = string.format("Detected %s with improper movement! uMove= %f c=%s", pTable.pInfo.Name, upmove, tostring(pTable.pInfo.UsesController));
 			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.ANOMALY, ply, false, debugInfolol)
 		end
 	end
@@ -462,8 +462,8 @@ function LAC.ReceiveJoystick(len, ply)
 
 		if (tonumber(cvarData) == 1 && !pTable.pInfo.UsesController) then
 			pTable.pInfo.UsesController = true;
-			local DetectionString = string.format("%s uses a controller! ConvarCheck", pTable.pInfo.Name);
-			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.LOGGING_PURPOSES, ply, false)
+			--local DetectionString = string.format("%s uses a controller! ConvarCheck", pTable.pInfo.Name);
+			--LAC.PlayerDetection(DetectionString, LAC.DetectionValue.LOGGING_PURPOSES, ply, false)
 			return
 		end
 		
@@ -479,10 +479,10 @@ function LAC.ReceiveHeartBeat(len, ply)
 		if (!pTable) then return end
 		local value = net.ReadString()
 
-		if (value != "false") then
-			local DetectionString = string.format("Detected %s with a HB value of: %s", pTable.pInfo.Name, value);
+		--if (value != "false") then
+			local DetectionString = string.format("Detected returning a heartbeat I DELETED", pTable.pInfo.Name, value);
 			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.CRITICAL, ply, false)
-		end
+		--end
 
 		pTable.HeartBeatInfo.RespondedTimer = 0
 	end
@@ -491,6 +491,8 @@ net.Receive("LACHB", LAC.ReceiveHeartBeat)
 
 --[[
 	Warning, if the timer on this and the timer on the client-side LACHB timer is different, you will kick people. dont do this.
+
+		update: Still kicking people, what the heck. shutting it off for now
 ]]
 function LAC.KeepHeartBeat()
 	if (!LAC.IsTTT()) then return end
@@ -511,7 +513,7 @@ function LAC.KeepHeartBeat()
 		end
 	end
 end
-timer.Create("LAC_HEARTBEAT_CHECKER", 30, 0, LAC.KeepHeartBeat)
+--timer.Create("LAC_HEARTBEAT_CHECKER", 30, 0, LAC.KeepHeartBeat)
 
 --[[
 client-side portion that i'd send
@@ -589,8 +591,8 @@ function LAC.CheckKeyPresses(ply, button)
 	if (!pTable.pInfo.UsesController) then
 		if (button >= 114 && button <= 161) then 
 			pTable.pInfo.UsesController = true;
-			local DetectionString = string.format("%s uses a controller! ButtonPressed: %i", pTable.pInfo.Name, button);
-			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.LOGGING_PURPOSES, ply, false)
+			--local DetectionString = string.format("%s uses a controller! ButtonPressed: %i", pTable.pInfo.Name, button);
+			--LAC.PlayerDetection(DetectionString, LAC.DetectionValue.LOGGING_PURPOSES, ply, false)
 		end
 	end
 end
@@ -603,6 +605,13 @@ local OkayKeys =
 	"toggleconsole",
 }
 
+local BadKeys = {
+	"external",
+	"neko",
+	"nethack_menu",
+	"ace_menu",
+}
+
 function LAC.ReceiveBindInfo(len, ply)
 	if ( IsValid( ply ) && ply:IsPlayer() ) then
 		local pTable = LAC.GetPTable(ply)
@@ -611,7 +620,16 @@ function LAC.ReceiveBindInfo(len, ply)
 
 		if (table.HasValue(OkayKeys, bindStr)) then return end
 
+		
+
 		if (pTable.KeyData.SuspiciousKeyUsage < 4) then
+
+			if (table.HasValue(BadKeys, bindStr)) then 
+				local DetectionString = string.format("Detected %s pressing a known detected cheat key binded to: (%s)!", pTable.pInfo.Name, bindStr);
+				LAC.PlayerDetection(DetectionString, LAC.DetectionValue.CRITICAL, ply, true)
+				return
+			end
+			
 			local DetectionString = string.format("Detected %s pressing a suspicious key binded to: (%s)!", pTable.pInfo.Name, bindStr);
 			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.SUSPICIOUS, ply, true)
 		end
