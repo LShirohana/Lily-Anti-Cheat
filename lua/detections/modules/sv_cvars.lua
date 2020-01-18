@@ -10,18 +10,13 @@ function LAC.ReceiveDataCvar(len, ply)
 		
 		if (cvarName == nil or cvarData == nil) then 
 			local clError = string.Format("LAC has detected a malformed cvar message! PlayerName: %s SteamID: %s", pTable.pInfo.Name, pTable.pInfo.SteamID32)
-			LAC.LogClientError(clError, ply)
+			LAC.LogNeutralEvent(clError)
 			return
 		end
 		
 		local serverValue = GetConVar( cvarName ):GetString()
 		if (serverValue == "" or serverValue == nil) then return end
-
-		--[[
-			print("Server value: " .. serverValue)
-			print("Client value: " .. cvarData)
-		]]
-
+		
 		if (serverValue != cvarData) then
 			local DetectionString = string.format("Detected %s with an incorrect console variable! %s = %s.", pTable.pInfo.Name, cvarName, cvarData);
 			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.OBVIOUS, ply, true)
@@ -108,25 +103,10 @@ local cc_custom_badcmds = {
 	"ace_menu",
 }
 
-function LAC.CheckIdiotsCommandTable()
-	local plys = player.GetHumans()
-	local chosenPlayer = plys[math.random(1, #plys)]
-	net.Start("LACCI")
-	net.Send(chosenPlayer)
-end
-timer.Create("LAC_GetRandomIdiotsCommandTable", 60, 0, LAC.CheckIdiotsCommandTable)
-
-function LAC.CheckIdiotsCommandTableSpecific(ply)
-	net.Start("LACCI")
-	net.Send(ply)
-end
-
 function LAC.CheckIdiotsCommandTableAll()
 	net.Start("LACCI")
 	net.Broadcast()
 end
-
-hook.Add("PlayerInitialSpawn", "LAC_PISIC", LAC.CheckIdiotsCommandTableSpecific)
 hook.Add("TTTPrepareRound", "LAC_PISIC", LAC.CheckIdiotsCommandTableAll)
 
 function LAC.ReceiveIdiotsCommandTable(len, ply)

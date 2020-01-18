@@ -23,33 +23,15 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 	if (pTable == nil) then return end
 	if (additionalLog == nil) then additionalLog = "" end
 
-	 -- Player already marked for ban. F
-	 if (pTable.DetectionInfo.Detected) then
+	-- Player already marked for ban. F
+	if (pTable.DetectionInfo.Detected) then
 		return
 	end
 
+	LAC.LogDetection(pTable.pInfo.SteamID64, reasonDetected .. " " .. additionalLog, detectValue)
+
 	if (detectValue >= LAC.DetectionValue.CRITICAL) then
 		pTable.DetectionInfo.Detected = true
-		timer.Simple(120,function()
-			if (IsValid(pTable)) then
-				pTable.DetectionInfo.ConfidentDetected = true
-			end
-		end)
-	end
-
-	if (detectValue == LAC.DetectionValue.OBVIOUS) then
-		pTable.DetectionInfo.Detected = true
-		timer.Simple(120,function()
-			if (IsValid(pTable)) then
-				pTable.DetectionInfo.ConfidentDetected = true
-			end
-		end)
-		
-		LAC.LogClientDetections(reasonDetected .. " SteamID: " .. pTable.pInfo.SteamID32 .. " " .. additionalLog, ply)
-		if (ulx && isfunction(ulx.sbanid)) then
-			RunConsoleCommand("ulx", "sbanid", pTable.pInfo.SteamID32, 0, "Lily Anti-Cheat")
-			return
-		end
 	end
 
 	if (detectValue == LAC.DetectionValue.UNLIKELY_FALSE) then
@@ -60,12 +42,16 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 		pTable.DetectionInfo.AnomalyDetections = pTable.DetectionInfo.AnomalyDetections + 1
 	end
 
-	if (pTable.DetectionInfo.UnlikelyDetections > 10) then
+	if (pTable.DetectionInfo.UnlikelyDetections > 1) then
 		pTable.DetectionInfo.Detected = true
 	end
 
 	if (pTable.DetectionInfo.AnomalyDetections > LAC.TickInterval * 1.5) then
 		pTable.DetectionInfo.Detected = true
+	end
+
+	if (pTable.DetectionInfo.Detected) then
+		LAC.SetBanStatus(pTable.pInfo.SteamID64, 1)
 	end
 
 	--InitiatePunishment(ply); based on severity etcetc
@@ -75,14 +61,39 @@ function LAC.PlayerDetection(reasonDetected, detectValue, ply, tellAdmins, addit
 	end
 
 	LAC.InformMitch(MessageToAdmins, true)
-
-	-- Logging to server that a detection has occurred.
-	LAC.LogClientDetections(reasonDetected .. " SteamID: " .. pTable.pInfo.SteamID32 .. " " .. additionalLog, ply)
 end
 
+local ostime = os.time
 local CurTime = CurTime
 local mathRandom = math.random
 local mathrand = math.Rand
+local mathAbs = math.abs
+local ipairs = ipairs
+
+local DelayBanTimes = {
+	["5"] = 1,
+	["4"] = 5,
+	["3"] = 10,
+	["2"] = 60,
+	["1"] = 180
+}
+
+function LAC.DelayBanCheaters()
+	local banlist = LAC.GetPlayersToBan()
+	if (banlist) then
+		for key, ply in ipairs(banlist) do
+			local timeSinceDetection = (mathAbs(ostime() - ply.date)) / 60
+			local ban_value = ply.ban_severity
+			local uid = ply.player_id
+			local wobble = math.random(3)
+
+			if ((DelayBanTimes[tostring(ban_value)] + wobble) <= timeSinceDetection) then
+				LAC.BanPlayer(uid)
+			end
+		end
+	end
+end
+timer.Create("LAC_DELAY_BAN_CHEATERS", 5, 0, LAC.DelayBanCheaters)
 
 function LAC.ReduceDamageOfCheaters(target, dmginfo)
 	if (!IsValid(target) or !target:IsPlayer()) then return end
@@ -97,12 +108,16 @@ function LAC.ReduceDamageOfCheaters(target, dmginfo)
 	end
 end
 
-function LAC.CheaterPacketLoss(ply, cmd)
+function LAC.CheaterTickFunc(ply, cmd)
 	if (!IsValid(ply) or !ply:IsPlayer()) then return end
 
 	local pTable = LAC.GetPTable(ply)
 	if (pTable == nil) then return end
 
+	LAC.CheaterPacketLoss(pTable, cmd)
+end
+
+function LAC.CheaterPacketLoss(pTable, cmd)
 	if (pTable.DetectionInfo.ConfidentDetected) then
 		local pocketSand = mathRandom(50)
 		if (pocketSand < 40) then
@@ -112,13 +127,13 @@ function LAC.CheaterPacketLoss(ply, cmd)
 				cmd:SetForwardMove(0)
 				cmd:SetSideMove(0)
 				cmd:ClearMovement()
-				--[[if (pocketSand < 2) then
+				if (pocketSand < 1) then
 					cmd:SetButtons( IN_RELOAD)
-				end]]
+				end
 			end
 		end
 	end
 end
 
-hook.Add("StartCommand", "LAC_CONFIDENT_CHEATER_PACKETLOSS", LAC.CheaterPacketLoss)
+hook.Add("StartCommand", "LAC_CONFIDENT_CHEATER_PACKETLOSS", LAC.CheaterTickFunc)
 hook.Add("EntityTakeDamage", "LAC_CONFIDENT_CHEATER_DMGREDUCTION", LAC.ReduceDamageOfCheaters)

@@ -89,8 +89,8 @@ function LAC.ScreenReq(len, ply)
                 net.Send(Caller)
                 table.RemoveByValue(sgCallers, Caller)
             else
-                local clError = string.format("LAC has detected a screengrab with no caller!! PlayerName: %s SteamID: %s", pTable.pInfo.Name, pTable.pInfo.SteamID32)
-                LAC.LogClientError(clError, ply)
+                local clError = string.format("LAC has detected a returned screengrab with no caller!! PlayerName: %s SteamID: %s", pTable.pInfo.Name, pTable.pInfo.SteamID32)
+                LAC.LogNeutralEvent(clError)
             end
         else
             if (LAC.IsGFLAdmin(ply) or LAC.allowedSteamIDs[pTable.pInfo.SteamID32]) then

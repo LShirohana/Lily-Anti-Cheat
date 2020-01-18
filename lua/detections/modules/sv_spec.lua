@@ -1,5 +1,10 @@
 LAC = LAC or {}
 
+--[[
+currently getting rid of this due to issues with properly spectating people.
+Will fix in the future in a different, proper method.
+
+
 function LAC.Spectate(calling_ply, target_ply)
     if (!IsValid(calling_ply)) then return end
     if (calling_ply:IsBot()) then return end
@@ -39,3 +44,4 @@ function LAC.ReplaceULX()
     end
 end
 timer.Create( "ReplaceULXSpec", 10, 0, LAC.ReplaceULX) 
+]]

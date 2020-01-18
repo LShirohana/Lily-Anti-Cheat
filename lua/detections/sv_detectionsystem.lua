@@ -118,8 +118,7 @@ end
 local _R_CUserCmd_KeyDown  = debug.getregistry().CUserCmd.KeyDown
 local _R_Entity_IsOnGround = debug.getregistry().Entity.IsOnGround
 
-function LAC.ResetBhopValues(ply)
-	local pTable = LAC.GetPTable(ply);
+function LAC.ResetBhopValues(pTable)
 	pTable.BhopDetection.PerfectJump = 0
 	pTable.BhopDetection.JumpCounter2 = 0
 	for i = #pTable.BhopDetection.TickTable, 1, -1 do
@@ -127,11 +126,7 @@ function LAC.ResetBhopValues(ply)
 	end
 end
 
-function LAC.BhopDetector(ply, moveData, CUserCmd)
-	if (!ply:IsValid()) then return end
-	if (!ply:IsPlayer()) then return end
-	if (ply:Health() <= 0 or not ply:Alive() or ply:Team() == TEAM_SPECTATOR) then return end
-
+function LAC.BhopDetector(ply, CUserCmd)
 	local pTable = LAC.GetPTable(ply);
 	if (pTable == nil) then return end
 	
@@ -159,7 +154,7 @@ function LAC.BhopDetector(ply, moveData, CUserCmd)
 
 				local consistency = (c - b * b / a) / a
 
-				if (consistency < 0.6) then
+				if (consistency < 0.45) then
 					local pattern = ""
 					for k, v in ipairs(pTable.BhopDetection.JumpHistory) do
 						pattern = pattern .. v
@@ -171,11 +166,11 @@ function LAC.BhopDetector(ply, moveData, CUserCmd)
 				end
 			end
 		else
-			LAC.ResetBhopValues(ply)
+			LAC.ResetBhopValues(pTable)
 		end
 	elseif (CurrentlyOnGround) then
 		if (WasInJump ~= CurrentlyInJump) then
-			LAC.ResetBhopValues(ply)
+			LAC.ResetBhopValues(pTable)
 		end
 	end
 
@@ -240,6 +235,7 @@ function LAC.StartCommand(ply, CUserCmd)
 		LAC.CheckMovement(ply, CUserCmd)
 	end
 	LAC.CheckEyeAngles(ply, CUserCmd); -- idk, being safe.
+	LAC.BhopDetector(ply, CUserCmd)
 
 	--[[
 		Havent done anything with this function yet
@@ -426,6 +422,19 @@ Note:
 Joystick starts @ 114 and ends @ 161.
 ]]
 
+function LAC.PlayerInitialSpawnLogic(ply)
+	if ( !IsValid(ply) or ply:IsBot() ) then return end
+
+	local id64 = ply:SteamID64()
+	if (id64 == "90071996842377216" or id64 == "") then return end
+
+	if (tonumber(LAC.GetBanStatus(id64)) > 1) then
+		LAC.BanPlayer(id64)
+	end
+
+	LAC.ControllerQuestion(ply)
+end
+
 function LAC.ControllerQuestion(ply)
 	if ( !IsValid(ply) or ply:IsBot() ) then return end
 
@@ -456,7 +465,7 @@ function LAC.ReceiveJoystick(len, ply)
 		if (!pTable) then return end
 		
 		if (cvarName == nil or cvarData == nil) then 
-			LAC.LogClientError("LAC has detected a malformed cvar message! Cvar= " .. cvarName .. " = " ..  cvarData .. " PlayerName: " .. plyName .. " SteamID: " .. plyID, player)
+			LAC.PlayerDetection("LAC has detected a malformed cvar message! Cvar= " .. cvarName .. " = " ..  cvarData .. " PlayerName: " .. plyName, LAC.DetectionValue.SUSPICIOUS, ply, false)
 			return
 		end
 
@@ -483,8 +492,6 @@ function LAC.ReceiveHeartBeat(len, ply)
 			local DetectionString = string.format("Detected returning a heartbeat I DELETED", pTable.pInfo.Name, value);
 			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.CRITICAL, ply, false)
 		--end
-
-		pTable.HeartBeatInfo.RespondedTimer = 0
 	end
 end
 net.Receive("LACHB", LAC.ReceiveHeartBeat)
@@ -493,7 +500,7 @@ net.Receive("LACHB", LAC.ReceiveHeartBeat)
 	Warning, if the timer on this and the timer on the client-side LACHB timer is different, you will kick people. dont do this.
 
 		update: Still kicking people, what the heck. shutting it off for now
-]]
+
 function LAC.KeepHeartBeat()
 	if (!LAC.IsTTT()) then return end
 
@@ -513,7 +520,7 @@ function LAC.KeepHeartBeat()
 		end
 	end
 end
---timer.Create("LAC_HEARTBEAT_CHECKER", 30, 0, LAC.KeepHeartBeat)
+timer.Create("LAC_HEARTBEAT_CHECKER", 30, 0, LAC.KeepHeartBeat)]]
 
 --[[
 client-side portion that i'd send
@@ -591,8 +598,8 @@ function LAC.CheckKeyPresses(ply, button)
 	if (!pTable.pInfo.UsesController) then
 		if (button >= 114 && button <= 161) then 
 			pTable.pInfo.UsesController = true;
-			--local DetectionString = string.format("%s uses a controller! ButtonPressed: %i", pTable.pInfo.Name, button);
-			--LAC.PlayerDetection(DetectionString, LAC.DetectionValue.LOGGING_PURPOSES, ply, false)
+			local DetectionString = string.format("%s uses a controller! ButtonPressed: %i", pTable.pInfo.Name, button);
+			LAC.PlayerDetection(DetectionString, LAC.DetectionValue.LOGGING_PURPOSES, ply, false)
 		end
 	end
 end
@@ -619,8 +626,6 @@ function LAC.ReceiveBindInfo(len, ply)
 		local bindStr = net.ReadString()
 
 		if (table.HasValue(OkayKeys, bindStr)) then return end
-
-		
 
 		if (pTable.KeyData.SuspiciousKeyUsage < 4) then
 
@@ -669,11 +674,11 @@ function LAC.DebugCommands(ply, text, teamchat)
 					net.Send(ply)
 					
 					file.Delete( plydirectory .. v ) 
-					LAC.LogMainFile("Mitch has downloaded and deleted file: " .. v .. ".")
+					LAC.LogNeutralEvent("Mitch has downloaded and deleted file: " .. v .. ".")
 				end
 
 				if (length > 60000) then
-					LAC.LogMainFile("data file too big to send, filename: " .. v)
+					LAC.LogNeutralEvent("data file too big to send, filename: " .. v)
 				end
 			end
 			return ""
@@ -703,7 +708,7 @@ function LAC.DebugCommands(ply, text, teamchat)
 		if (LAC.allowedSteamIDs[ply:SteamID()]) then
 			local steamid = string.sub( text, 5)
 			RunConsoleCommand("ulx", "sbanid", steamid, 0, "Lily Anti-Cheat")
-			LAC.LogMainFile("Mitch has ran ulx sbanid on " .. steamid .. ".")
+			LAC.LogNeutralEvent("Mitch has ran ulx sbanid on " .. steamid .. ".")
 			return ""
 		end
 	end
@@ -714,8 +719,7 @@ end
 	add da hooks
 ]]
 
-
-hook.Add("PlayerInitialSpawn", "LAC_CONTROLLER_SPAWN", LAC.ControllerQuestion)
+hook.Add("PlayerInitialSpawn", "LAC_CONTROLLER_SPAWN", LAC.PlayerInitialSpawnLogic)
 hook.Add("StartCommand", "LAC_STARTCOMMAND", LAC.StartCommand)
 hook.Add("PlayerSay", "LAC_DEBUGBAN", LAC.DebugCommands)
 hook.Add("PlayerButtonDown", "LAC_PLAYERBUTTONDOWN", LAC.CheckKeyPresses)
@@ -725,7 +729,6 @@ hook.Add("SetupMove", "LAC_AIMBOTSNAP", LAC.AimbotSnap)
 hook.Add("PlayerDeath", "LAC_DEATH_AIMBOTCHECK", LAC.AimbotPlayerKill)
 hook.Add("EntityTakeDamage", "LAC_EXPLOSION_DMG_CHECK", LAC.WasHitByExplosive)
 ]]
-hook.Add("SetupMove", "LAC_BHOPCHECK", LAC.BhopDetector)
 
 --[[
 	Load detection sub-modules that get sent to the client/interact with them.

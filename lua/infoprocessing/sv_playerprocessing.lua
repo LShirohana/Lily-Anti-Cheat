@@ -79,7 +79,7 @@ function LAC.InitializePlayerTable(ply)
 	};
 end
 
-function LAC.PlayerSpawn(ply)
+function LAC.PlayerSpawn(ply, steamid, uniqueid)
 	if (!IsValid(ply) or ply:IsBot()) then return end
 
 	local id64 = ply:SteamID64()
@@ -88,6 +88,7 @@ function LAC.PlayerSpawn(ply)
 		return
 	end
 
+	LAC.LogPlayer(ply)
 	LAC.InitializePlayerTable(ply)
 end
 
@@ -102,6 +103,11 @@ function LAC.PlayerDisconnect(ply)
 	LAC.Players[id64] = nil;
 end
 
+function LAC.BanPlayer(uid)
+	local steamid32 = util.SteamIDFrom64( tostring(uid) )
+	LAC.SetBanStatus(uid, 2)
+	RunConsoleCommand("ulx", "sbanid", steamid32, 0, "Lily Anti-Cheat")
+end
 
 hook.Add("PlayerAuthed", "LAC_SPAWN", LAC.PlayerSpawn)
 hook.Add("PlayerDisconnected", "LAC_DISCONNECT", LAC.PlayerDisconnect)

@@ -33,12 +33,12 @@ LAC = LAC or {}
 LAC.MsgC = MsgC
 LAC.include = include
 LAC.MsgC(Color(240,10,10), "LAC Server-side Starting up!\n")
-LAC.Version = 0.09
+LAC.Version = 1.0
 LAC.TickInterval = math.floor((1 / engine.TickInterval()))
 
 -- To prevent multiple copies of the AC from running.
 if (LAC && LAC.Options && LAC.GetOptionValue("LAC_PreventReload")) then
-	LAC.LogEvent("System is already loaded! Preventing reload.", LAC.GetDate("%d-%m-%Y-log"), LAC.MainLogFile)
+	LAC.LogNeutralEvent("System is already loaded! Preventing reload.")
 	return
 end
 
@@ -59,16 +59,16 @@ LAC.Detect = "A9B90B05C64DF362333F4F44C8D5D8CA00F823B3"
 LAC.include("options/sv_options.lua")
 LAC.InitializeOptions()
 
+-- Log System
+LAC.include("eventlog/sv_eventlog.lua")
+
 -- Now to check the global option of should we even run the AC!
 if (!LAC.GetOptionValue("LAC_Enabled")) then
 	LAC.MsgC(Color(10,240,10), string.format("LAC Version %.2f has been shut off in the config. Preventing further loading.\n", LAC.Version))
-	LAC.LogMainFile("LAC has been disabled by config.")
+	LAC.LogNeutralEvent("LAC has been disabled by config.")
 	return
 end
 
-
--- Log System
-LAC.include("eventlog/sv_eventlog.lua")
 -- Message/Informing System
 LAC.include("inform/sv_inform.lua")
 -- Player Processing/Punishiment

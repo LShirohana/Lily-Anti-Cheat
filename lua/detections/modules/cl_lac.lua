@@ -100,7 +100,7 @@ LAC.netReceive("LACBC", LAC.FollowKey)
 
 -- Ripped straight from that garbage add-on. Why? Because this actually catches idiots still in 2019...
 -- what the heck
--- Okay im just too lazy to localize all these functions. fuck this.
+-- Okay im just too lazy to localize all these functions.
 function LAC.CmdTable(len)
 	local cmdtable, autocompletefuncs = LAC.concommandGetTable()
 	local stringedcmdtable = {}
