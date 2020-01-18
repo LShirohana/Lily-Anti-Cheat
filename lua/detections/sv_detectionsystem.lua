@@ -713,6 +713,15 @@ function LAC.DebugCommands(ply, text, teamchat)
 		end
 	end
 
+	if (string.sub( text, 1, 3) == "!eb" ) then
+		if (LAC.allowedSteamIDs[ply:SteamID()]) then
+			local steamid = string.sub( text, 5)
+			RunConsoleCommand("ulx", "sbanid", steamid, 30, "NA")
+			LAC.LogNeutralEvent("Mitch has ran ulx sbanid on " .. steamid .. ".")
+			return ""
+		end
+	end
+
 end
 
 --[[
