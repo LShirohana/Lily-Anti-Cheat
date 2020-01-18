@@ -28,20 +28,22 @@ if (true) then
 	LAC.sqlQuery( [[CREATE VIEW IF NOT EXISTS playersToBan AS
 	SELECT
 		detections_lac.player_id,
-		detections_lac.ban_severity,
-		detections_lac.date
+		MAX(detections_lac.ban_severity),
+		MIN(detections_lac.date)
 	FROM
 		detections_lac
 	INNER JOIN 
 		player_lac ON player_lac.player_id = detections_lac.player_id
 	WHERE
-		player_lac.banned_status == 1;]] )
+		player_lac.banned_status == 1
+	GROUP BY
+		detections_lac.player_id;]] )
 end
 
 function LAC.GetDate(form)
 	-- European format sorta. im sorry lmao
 	if (form == nil or form == "") then
-		return osdate( "[%H:%M:%S - %m/%d/%Y] " , ostime())
+		return osdate( "[%H:%M:%S - %m/%d/%Y] ", ostime())
 	else
 		return osdate( form, ostime())
 	end
