@@ -28,8 +28,8 @@ if (true) then
 	LAC.sqlQuery( [[CREATE VIEW IF NOT EXISTS playersToBan AS
 	SELECT
 		detections_lac.player_id,
-		MAX(detections_lac.ban_severity),
-		MIN(detections_lac.date)
+		MAX(detections_lac.ban_severity) AS ban_severity,
+		MIN(detections_lac.date) AS date
 	FROM
 		detections_lac
 	INNER JOIN 
