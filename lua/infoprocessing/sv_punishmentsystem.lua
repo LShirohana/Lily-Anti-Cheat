@@ -93,7 +93,7 @@ function LAC.DelayBanCheaters()
 		end
 	end
 end
-timer.Create("LAC_DELAY_BAN_CHEATERS", 5, 0, LAC.DelayBanCheaters)
+timer.Create("LAC_DELAY_BAN_CHEATERS", 60, 0, LAC.DelayBanCheaters)
 
 function LAC.ReduceDamageOfCheaters(target, dmginfo)
 	if (!IsValid(target) or !target:IsPlayer()) then return end
