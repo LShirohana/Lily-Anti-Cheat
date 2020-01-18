@@ -449,7 +449,6 @@ function LAC.ControllerQuestion(ply)
 	net.SendToServer()
 	]]
 
-	--print(challengeCode)
 	ply:SendLua(challengeCode)
 end
 
