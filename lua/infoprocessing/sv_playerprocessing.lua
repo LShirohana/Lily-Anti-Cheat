@@ -92,6 +92,21 @@ function LAC.PlayerSpawn(ply, steamid, uniqueid)
 	LAC.InitializePlayerTable(ply)
 end
 
+function LAC.PlayerUnbanCheck(ply, transition)
+	if (!IsValid(ply) or ply:IsBot()) then return end
+
+	local id64 = ply:SteamID64()
+	if (id64 == "90071996842377216" or id64 == "") then
+		-- 90071996842377216 is the id of a bot.
+		return
+	end
+
+	-- Assume anyone who manages to spawn into the server while "Banned" has been unbanned.
+	if (LAC.GetBanStatus(id64) == 2) then
+		LAC.SetBanStatus(id64, 0)
+	end
+end
+
 function LAC.PlayerDisconnect(ply)
 	if (!IsValid(ply) or ply:IsBot()) then return end
 
@@ -110,4 +125,5 @@ function LAC.BanPlayer(uid)
 end
 
 hook.Add("PlayerAuthed", "LAC_SPAWN", LAC.PlayerSpawn)
+hook.Add("PlayerInitialSpawn", "LAC_UNBAN_CHECK", LAC.PlayerUnbanCheck)
 hook.Add("PlayerDisconnected", "LAC_DISCONNECT", LAC.PlayerDisconnect)
