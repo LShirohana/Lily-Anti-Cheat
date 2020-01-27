@@ -69,6 +69,12 @@ if (!LAC.GetOptionValue("LAC_Enabled")) then
 	return
 end
 
+if (game.SinglePlayer()) then 
+	LAC.MsgC(Color(10,240,10), string.format("LAC Version %.2f has been shut off due to single-player mode!. Preventing further loading.\n", LAC.Version))
+	LAC.LogNeutralEvent("LAC has been disabled by SinglePlayer.")
+	return 
+end
+
 -- Message/Informing System
 LAC.include("inform/sv_inform.lua")
 -- Player Processing/Punishiment
