@@ -17,6 +17,7 @@ end
 
 -- This is called assuming you verified ply b4 calling.
 function LAC.InitializePlayerTable(ply)
+	if (game.SinglePlayer() ) then return end
 	LAC.Players[ply:SteamID64()] = 
 	{
 		pInfo = 
