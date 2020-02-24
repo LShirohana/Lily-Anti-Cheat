@@ -24,6 +24,7 @@ if (!sql.TableExists( "logs_lac" )) then
 	LAC.sqlQuery( [[CREATE TABLE IF NOT EXISTS logs_lac( id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, date INTEGER NOT NULL, log_string TEXT NOT NULL);]] )
 end
 
+-- lol
 if (true) then
 	LAC.sqlQuery( [[CREATE VIEW IF NOT EXISTS playersToBan AS
 	SELECT

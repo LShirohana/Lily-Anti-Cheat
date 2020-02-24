@@ -37,7 +37,7 @@ end
 
 function LAC.InformAdmins(DetectionTable, printToChat)
 	for k, v in ipairs(player.GetAll()) do
-		if (IsValid(v) && LAC.IsGFLAdmin(v)) then
+		if (IsValid(v) && LAC.IsACAdmin(v)) then
 			net.Start("LACMessagePrint")
             net.WriteTable(DetectionTable)
             net.WriteBool(printToChat)

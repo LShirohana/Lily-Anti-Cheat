@@ -1,7 +1,7 @@
 ### THIS IS A WORK IN PROGRESS!
 
 ## Info
-This is an anti-cheat written for GFL, licensed to them by Lily (STEAM_0:1:8115)
+This is an anti-cheat written for myself, licensed to no-one by Lily (STEAM_0:1:8115)
 
 ## How to use?
 

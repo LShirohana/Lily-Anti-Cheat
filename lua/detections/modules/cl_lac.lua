@@ -12,8 +12,8 @@
 --
 --			ty ~
 --
---			update 12-27-2019: merry kurisumasu. Pls dont hate me if I somehow ban you, it's nothin' personal! 
---				I just like coding and writing an anti-cheat is fun!
+--		update 12-27-2019: merry kurisumasu. Pls dont hate me if I somehow ban you, it's nothin' personal! 
+--			I just like coding and writing an anti-cheat is fun!
 --
 --		update 1/9/2020:
 --			I just realize comments encased in --[[]] get stripped out when sent to the client

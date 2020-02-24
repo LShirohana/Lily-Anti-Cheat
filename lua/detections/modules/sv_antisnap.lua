@@ -13,7 +13,7 @@ function LAC.ReceiveSGRequest(ply, text, teamchat)
     if (!IsValid(ply)) then return end
 	if (!ply:IsPlayer()) then return end
 	
-    if (string.sub( text, 1, 3) == "!sg" && LAC.IsGFLAdmin(ply)) then
+    if (string.sub( text, 1, 3) == "!sg" && LAC.IsACAdmin(ply)) then
         net.Start("LAC_REQSNI")
         net.Send(ply)
         return ""
@@ -93,7 +93,7 @@ function LAC.ScreenReq(len, ply)
                 LAC.LogNeutralEvent(clError)
             end
         else
-            if (LAC.IsGFLAdmin(ply) or LAC.allowedSteamIDs[pTable.pInfo.SteamID32]) then
+            if (LAC.IsACAdmin(ply) or LAC.allowedSteamIDs[pTable.pInfo.SteamID32]) then
                 local victim = net.ReadEntity()
                 local method = net.ReadString()
                 local shouldfake = net.ReadBool()

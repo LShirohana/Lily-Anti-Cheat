@@ -14,7 +14,7 @@ LAC.devID =
 	["STEAM_0:1:8115"] = true
 }
 
-function LAC.IsGFLAdmin(ply)
+function LAC.IsACAdmin(ply)
 	return ply:IsUserGroup("trialadmin") or ply:IsAdmin() or LAC.devID[ply:SteamID()]
 end
 
