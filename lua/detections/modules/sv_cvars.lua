@@ -41,12 +41,11 @@ function LAC.BeginDataCvarChallenge(ply)
 		"sv_cheats",
 		"sv_allowcslua",
 		"mat_wireframe",
-		"mat_fullbright"
+		"mat_fullbright",
 	}
 
 	local chosenCvar = possibleCvars[math.random(1, #possibleCvars)]
-	local chosenCvarString = "cvars.String(\"" .. chosenCvar .. "\")" -- jesus christ 
-
+	local chosenCvarString = "tostring(cvars.String(\"" .. chosenCvar .. "\"))" -- jesus christ 
 	local challengeCode = 
 	[[
 	net.Start("LACDataC")
