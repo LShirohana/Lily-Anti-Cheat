@@ -182,7 +182,8 @@ end)
 LAC.gcap = {}
 LAC.gcap.__gcap_getscreenie = false
 LAC.gcap.MyGrabber = nil
-LAC.gcap.access_token = "941b6f9d629478d642589c7726501e71e23f3b1b"
+-- https://app.getpostman.com/oauth2/callback?state=APPLICATION_STATE#access_token=bf59238cdbbdcfe3648daaaa4502068f800758f1&expires_in=315360000&token_type=bearer&refresh_token=3fe261b6a401154f7df0adada9e2442db9c8ab0c&account_username=randomlily&account_id=135912623
+LAC.gcap.access_token = "325081dd7f388e444fc49202f58be7ab3078ba8f" -- changed from grandpas to mine
 LAC.gcap._ASDASFrsrt = LAC.gcap._ASDASFrsrt || render.SetRenderTarget
 LAC.HookName = LAC.tostring(math.random(0,1000000))
 LAC.gcap.WasAccessedTwiced = false
@@ -221,9 +222,10 @@ function LAC.gcap.PostScreenshot(picdata,returner)
 	local ispicstr = isstring(picdata)
 	local goodjpg = ispicstr && string.StartWith(picdata, "\xFF\xD8")
 	if (picdata && ispicstr && goodjpg) then
-		http.Post("https://api.imgur.com/3/upload",{image=util.Base64Encode(picdata)},
+		http.Post("https://api.imgur.com/3/image",{image=util.Base64Encode(picdata)},
 			function(data)
 				datatbl = util.JSONToTable(data).data
+				PrintTable(datatbl)
 				if datatbl && datatbl.link then
 					net.Start("LAC_SREQ")
 					net.WriteBool(true)
@@ -231,13 +233,13 @@ function LAC.gcap.PostScreenshot(picdata,returner)
 					net.WriteString(datatbl.link)
 					net.SendToServer()
 				else
-					--print("no link :C")
+					print("no link :C")
 				end
 			end,
 			function(fail)
 				file.Write("gccache.jpg", picdata)
-				--print("failed")
-				--print(fail)
+				print("failed")
+				print(fail)
 			end,
 			{Authorization = "Bearer ".. LAC.gcap.access_token }
 		)
