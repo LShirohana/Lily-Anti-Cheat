@@ -2,8 +2,10 @@ LAC = LAC or {}
 
 include("infoprocessing/sv_playerprocessing.lua")
 
+if (!LAC.Is64Bit()) then
 -- gmsv_lacutil_win32.dll or gmsv_lacutil_linux.dll
-require("lacutil")
+	require("lacutil")
+end
 
 -- We will be adding many more network strings in the future, as well as dynamic ones.
 util.AddNetworkString( "LACData" )
@@ -231,7 +233,9 @@ function LAC.StartCommand(ply, CUserCmd)
 	pTable.pInfo.Name = ply:Name()
 
 	if (LAC.IsTTT()) then
-		LAC.CheckContextMenu(ply, CUserCmd);
+		if (!LAC.Is64Bit()) then
+			LAC.CheckContextMenu(ply, CUserCmd);
+		end
 		LAC.CheckMovement(ply, CUserCmd)
 	end
 	LAC.CheckEyeAngles(ply, CUserCmd); -- idk, being safe.

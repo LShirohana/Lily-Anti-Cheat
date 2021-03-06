@@ -4,6 +4,19 @@ function LAC.IsButtonDown(buttons, IN_BUTTON)
 	return (bit.band(buttons, IN_BUTTON) != 0);
 end
 
+--[[
+The simplest way is to test number limit.
+In 32 bit Lua 0xffffffff(8'f's) would be the max int number,
+and 0xfffffffff(9'f's) would overflow try flowing code
+]]
+function LAC.Is64Bit()
+	if (0xffffffff == 0xfffffffff) then
+		return false
+	else 
+		return true
+	end
+end
+
 function LAC.IsTTT()
 	return (gmod.GetGamemode().Name == "Trouble in Terrorist Town")
 end
